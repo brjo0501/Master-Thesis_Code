@@ -1,0 +1,20 @@
+digraph {
+	cam_1 [label="Camera 1" color=lightblue style=filled]
+	cam_2 [label="Camera 2" color=lightblue style=filled]
+	cam_3 [label="Camera 3" color=lightblue style=filled]
+	con_1 [label="Conveyor 1" color=lightgrey style=filled]
+	con_2 [label="Conveyor 2" color=lightgrey style=filled]
+	con_3 [label="Conveyor 3" color=lightgrey style=filled]
+	rob_1 [label="Robot 1" color=lightyellow style=filled]
+	rob_2 [label="Robot 2" color=lightyellow style=filled]
+	EoL [label="End of Line" color=lightgreen style=filled]
+	rob_2 -> EoL
+	rob_1 -> rob_2
+	cam_2 -> rob_1
+	cam_3 -> rob_1
+	cam_1 -> rob_2
+	con_1 -> rob_2
+	con_2 -> rob_2
+	con_3 -> rob_1
+	con_2 -> rob_1
+}
