@@ -17,4 +17,6 @@ digraph {
 	con_2 -> rob_2
 	con_3 -> rob_1
 	con_2 -> rob_1
+	rob_1 -> EoL
+	con_1 -> EoL
 }

@@ -57,14 +57,12 @@ digraph G {
 		EoL_4_X
 		EoL_5_X
 		EoL_6_X
-		EoL_7_X
 		EoL_1_Y
 		EoL_2_Y
 		EoL_3_Y
 		EoL_4_Y
 		EoL_5_Y
 		EoL_6_Y
-		EoL_7_Y
 	}
 	cam_1_X -> rob_2_1
 	cam_1_Y -> rob_2_1
@@ -114,6 +112,8 @@ digraph G {
 	con_1 -> rob_2_2
 	con_1 -> rob_2_3
 	con_1 -> rob_2_4
+	con_1 -> EoL_1_X
+	con_1 -> EoL_1_Y
 	rob_1_1 -> rob_2_1
 	rob_1_1 -> rob_2_2
 	rob_1_1 -> rob_2_3
@@ -134,18 +134,18 @@ digraph G {
 	rob_1_gripper -> rob_2_2
 	rob_1_gripper -> rob_2_3
 	rob_1_gripper -> rob_2_4
-	rob_2_1 -> EoL_1_X
-	rob_2_1 -> EoL_1_Y
-	rob_2_2 -> EoL_1_X
-	rob_2_2 -> EoL_1_Y
-	rob_2_3 -> EoL_1_X
-	rob_2_3 -> EoL_1_Y
-	rob_2_4 -> EoL_1_X
-	rob_2_4 -> EoL_1_Y
 	rob_2_1 -> EoL_2_X
 	rob_2_2 -> EoL_2_X
 	rob_2_3 -> EoL_2_X
 	rob_2_4 -> EoL_2_X
+	rob_2_1 -> EoL_2_Y
+	rob_2_2 -> EoL_2_Y
+	rob_2_3 -> EoL_2_Y
+	rob_2_4 -> EoL_2_Y
+	rob_2_1 -> EoL_3_X
+	rob_2_2 -> EoL_3_X
+	rob_2_3 -> EoL_3_X
+	rob_2_4 -> EoL_3_X
 	rob_2_1 -> EoL_3_Y
 	rob_2_2 -> EoL_3_Y
 	rob_2_3 -> EoL_3_Y
@@ -162,18 +162,20 @@ digraph G {
 	rob_2_2 -> EoL_5_X
 	rob_2_3 -> EoL_5_X
 	rob_2_4 -> EoL_5_X
+	rob_2_1 -> EoL_5_Y
+	rob_2_2 -> EoL_5_Y
+	rob_2_3 -> EoL_5_Y
+	rob_2_4 -> EoL_5_Y
+	rob_2_1 -> EoL_6_X
+	rob_2_2 -> EoL_6_X
+	rob_2_3 -> EoL_6_X
+	rob_2_4 -> EoL_6_X
 	rob_2_1 -> EoL_6_Y
 	rob_2_2 -> EoL_6_Y
 	rob_2_3 -> EoL_6_Y
 	rob_2_4 -> EoL_6_Y
-	rob_2_1 -> EoL_7_X
-	rob_2_2 -> EoL_7_X
-	rob_2_3 -> EoL_7_X
-	rob_2_4 -> EoL_7_X
-	rob_2_gripper -> EoL_1_X
-	rob_2_gripper -> EoL_1_Y
-	rob_2_gripper -> EoL_2_X
-	rob_2_gripper -> EoL_2_Y
+	rob_1_gripper -> EoL_2_X
+	rob_1_gripper -> EoL_2_Y
 	rob_2_gripper -> EoL_3_X
 	rob_2_gripper -> EoL_3_Y
 	rob_2_gripper -> EoL_4_X
@@ -182,6 +184,4 @@ digraph G {
 	rob_2_gripper -> EoL_5_Y
 	rob_2_gripper -> EoL_6_X
 	rob_2_gripper -> EoL_6_Y
-	rob_2_gripper -> EoL_7_X
-	rob_2_gripper -> EoL_7_Y
 }
