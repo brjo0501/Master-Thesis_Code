@@ -112,8 +112,8 @@ digraph G {
 	con_1 -> rob_2_2
 	con_1 -> rob_2_3
 	con_1 -> rob_2_4
-	con_1 -> EoL_1_X
-	con_1 -> EoL_1_Y
+	con_2 -> EoL_1_X
+	con_2 -> EoL_1_Y
 	rob_1_1 -> rob_2_1
 	rob_1_1 -> rob_2_2
 	rob_1_1 -> rob_2_3
@@ -134,14 +134,14 @@ digraph G {
 	rob_1_gripper -> rob_2_2
 	rob_1_gripper -> rob_2_3
 	rob_1_gripper -> rob_2_4
-	rob_2_1 -> EoL_2_X
-	rob_2_2 -> EoL_2_X
-	rob_2_3 -> EoL_2_X
-	rob_2_4 -> EoL_2_X
-	rob_2_1 -> EoL_2_Y
-	rob_2_2 -> EoL_2_Y
-	rob_2_3 -> EoL_2_Y
-	rob_2_4 -> EoL_2_Y
+	rob_1_1 -> EoL_2_X
+	rob_1_2 -> EoL_2_X
+	rob_1_3 -> EoL_2_X
+	rob_1_4 -> EoL_2_X
+	rob_1_1 -> EoL_2_Y
+	rob_1_2 -> EoL_2_Y
+	rob_1_3 -> EoL_2_Y
+	rob_1_4 -> EoL_2_Y
 	rob_2_1 -> EoL_3_X
 	rob_2_2 -> EoL_3_X
 	rob_2_3 -> EoL_3_X

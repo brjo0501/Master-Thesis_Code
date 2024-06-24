@@ -234,3 +234,54 @@ while true do
         simSwitchThread()
     end
 end
+
+
+-- if  blobCount > 3 then
+                
+--     if blobData[13] < 0.83359375 and blobData[13] > 0.68203125 and blobData[14] < 0.83359375 and blobData[14] > 0.68203125 then -- [180,220]
+--         tray1 = 1
+--     end
+    
+--     if blobData[19] < 0.69609375 and blobData[19] > 0.56953125 and blobData[20] < 0.69609375  and blobData[20] > 0.56953125 then -- [144,176]
+--         tray2 = 1
+--     end
+    
+--     local startX = 25
+--     local startY = 26
+    
+--     for i=1,blobCount-3,1 do
+--         if blobData[startX] < 0.2320315 and blobData[startX] > 0.18984375 and blobData[startY] < 0.2320315 and blobData[startY] > 0.18984375 then -- [45,55]
+--             correctCount = correctCount +1
+--         else --if blobData[startX] < 0.18 and blobData[startX] > 0.16 and blobData[startY] < 0.18 and blobData[startY] > 0.16 then
+--             wrongCount = wrongCount + 1
+--         end
+--         startX = startX + 6
+--         startY = startY + 6
+--     end
+--     msg = 'EoL: '..correctCount..' correct and '..wrongCount..' defect'
+    
+-- elseif blobCount == 3 then
+--     if blobData[13] < 0.83359375 and blobData[13] > 0.68203125 and blobData[14] < 0.83359375 and blobData[14] > 0.68203125 then -- [180,220]
+--         tray1 = 1
+--     end
+--     if blobData[19] < 0.69609375 and blobData[19] > 0.56953125 and blobData[20] < 0.69609375  and blobData[20] > 0.56953125 then -- [144,176]
+--         tray2 = 1
+--     end
+--     msg = 'EoL: no parts' 
+    
+-- elseif  blobCount == 2 then
+--     if blobData[13] < 0.83359375 and blobData[13] > 0.68203125 and blobData[14] < 0.83359375 and blobData[14] > 0.68203125 then
+--         tray1 = 1
+--     end
+--     msg = 'EoL: no blue tray' 
+-- end
+
+
+-- camData['id'] = id
+-- camData['correctCount'] = correctCount
+-- if correctCount == 3 then
+--     sim.pauseSimulation()
+-- end
+-- camData['wrongCount'] = wrongCount
+-- camData['tray1'] = tray1
+-- camData['tray2'] = tray2
