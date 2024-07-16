@@ -17,6 +17,7 @@ import numpy as np
 from scipy.interpolate import make_interp_spline
 from coppeliasim_zmqremoteapi_client import RemoteAPIClient
 import pandas as pd
+pd.set_option('future.no_silent_downcasting', True)
 import os
 import time
 import datetime
@@ -27,8 +28,8 @@ def draw_save(G,pos,node_colors,file_name:str, inter_type:str):
     plt.figure(figsize=(12, 10))
     plt.xlim((-12,14))
     plt.ylim((-12,8))
-    plt.title(f'Causal Graph: {inter_type}', fontsize=12)
-    nx.draw(G, pos,with_labels=True,node_size=2000, node_color=[node_colors[node] for node in G.nodes()], font_size=6, arrowsize=8,width=0.5)
+    plt.title(f'Causal Graph: {inter_type}', fontsize=24)
+    nx.draw(G, pos,with_labels=True,node_size=4000, node_color=[node_colors[node] for node in G.nodes()], font_size=12, arrowsize=8,width=0.5)
     plt.savefig(file_name)
     nx.write_gml(G, f'{file_name[:-4]}.gml')
 
@@ -72,7 +73,7 @@ class CloseGridLayout(GridLayout):
 class MainLayout(WhiteBoxLayout):
     def __init__(self, **kwargs):
         super(MainLayout, self).__init__(**kwargs)
-        Window.title = "Root Cause Analysis Demo - Pick and Place"
+        #Window.fullscreen = 'auto'
         self.orientation = 'horizontal'
 
         self.anomaly_detected = False
@@ -82,7 +83,7 @@ class MainLayout(WhiteBoxLayout):
         self.sim = client.require('sim')
         self.simBWF = client.require('simBWF')
 
-        inter_script = self.sim.getObject('/Interventions')
+        self.inter_script = self.sim.getObject('/Interventions')
 
         self.camera_1 = self.sim.getObject('/camera_1/camera')
         self.camera_2 = self.sim.getObject('/camera_2/camera')
@@ -96,15 +97,17 @@ class MainLayout(WhiteBoxLayout):
         self.rob_1 = self.sim.getObject('/Ragnar[0]')
         self.rob_2 = self.sim.getObject('/Ragnar[1]')
 
+        self.objects = [self.camera_1,self.camera_2,self.camera_3,self.rob_1,self.rob_2,self.camera_EoL]
+
         self.events = self.sim.getObject('/Events')
 
-        self.inter = {'Gripper 1':'interGripper1','Gripper 2':'interGripper2'}
+        self.inter = {'Normal':'normal','Gripper 1':'interGripper1','Gripper 2':'interGripper2'}
 
         # Left Panel for 6 Graphs
         self.left_panel = WhiteGridLayout(cols=1, size_hint_x=0.5)
 
-        self.t_data = pd.DataFrame()  # Time array
-        self.y_data = pd.DataFrame()  # Data array
+        self.t_data = pd.DataFrame()
+        self.data_out = pd.DataFrame()
         self.graphs = []
         self.scores = []
         
@@ -113,14 +116,19 @@ class MainLayout(WhiteBoxLayout):
         box_layout = CloseBoxLayout(orientation='vertical',size_hint_y=0.30)
         center_layout = AnchorLayout(anchor_x='center', anchor_y='center')
 
-        # Button
-        self.button1 = Button(text="Start Simulation", size_hint=(None, None), size=(400, 60), background_color=(0.9, 0.9, 0.9, 1))
+        # Buttons
+        self.button1 = Button(text='Start Simulation', size_hint=(None, None), size=(400, 60), background_color=(0.9, 0.9, 0.9, 1))
         center_layout.add_widget(self.button1)
         box_layout.add_widget(center_layout)
         center_layout = AnchorLayout(anchor_x='center', anchor_y='center')
 
-        self.button2 = Button(text="Stop Simulation", size_hint=(None, None), size=(400, 60), background_color=(0.9, 0.9, 0.9, 1))
+        self.button2 = Button(text='Stop Simulation', size_hint=(None, None), size=(400, 60), background_color=(0.9, 0.9, 0.9, 1))
         center_layout.add_widget(self.button2)
+        box_layout.add_widget(center_layout)
+        center_layout = AnchorLayout(anchor_x='center', anchor_y='center')
+
+        self.button3 = Button(text='Pause Simulation', size_hint=(None, None), size=(400, 60), background_color=(0.9, 0.9, 0.9, 1))
+        center_layout.add_widget(self.button3)
         box_layout.add_widget(center_layout)
         center_layout = AnchorLayout(anchor_x='center', anchor_y='center')
 
@@ -138,7 +146,7 @@ class MainLayout(WhiteBoxLayout):
 
         self.spinner2 = Spinner(
             text='Select Intervention',
-            values=('Gripper 1', 'Gripper 2'),
+            values=('Normal','Gripper 1', 'Gripper 2'),
             size_hint=(None, None),
             size=(400, 60),
             background_color=(0.5, 0.5, 0.5, 1)
@@ -149,11 +157,14 @@ class MainLayout(WhiteBoxLayout):
 
         box_layout1 = CloseBoxLayout(orientation='vertical',size_hint_y=0.30)
 
+        self.label = Label(text=f'Anomaly Detected: {self.anomaly_detected}', font_size=24, color=(0, 0.5, 0, 1))
+        box_layout1.add_widget(self.label)
         fig, ax = plt.subplots(figsize=(4, 3))
         ax.set_facecolor('#f0f8ff')
         ax.set_title(f'Score')
         ax.set_xlabel('Time')
         ax.set_ylabel('Value')
+        ax.set_ylim(0,100)
         self.canvas_score = FigureCanvasKivyAgg(fig)
         box_layout1.add_widget(self.canvas_score)
         right_panel.add_widget(box_layout1)
@@ -171,6 +182,7 @@ class MainLayout(WhiteBoxLayout):
 
         self.button1.bind(on_press=self.start_sim)
         self.button2.bind(on_press=self.stop_sim)
+        self.button3.bind(on_press=self.pause_sim)
         
         self.spinner1.bind(text=self.on_spinner_select_1)
         self.spinner2.bind(text=self.on_spinner_select_2)
@@ -311,6 +323,8 @@ class MainLayout(WhiteBoxLayout):
         self.networkx_graph_display.draw()
     
     def stop_sim(self, instance):
+        self.clock_data.cancel()
+        self.clock_plot.cancel()
         self.sim.stopSimulation()
         # Clear the figures when stopping the simulation
         for canvas in self.graphs:
@@ -320,17 +334,58 @@ class MainLayout(WhiteBoxLayout):
         
         self.t_data = pd.DataFrame()  # Time array
         self.y_data = pd.DataFrame()  # Data array
-
+        
         #self.sim.setBoolParam(self.sim.boolparam_display_enabled, True)
+
+    def pause_sim(self, instance):
+        self.clock_data.cancel()
+        self.clock_plot.cancel()
+        self.sim.pauseSimulation()
+             
     
     def start_sim(self, instance):
+        #self.sim.setStepping(True)
         self.sim.startSimulation()
         self.sim.setBoolParam(self.sim.boolparam_display_enabled, False)
         print('Connection and Start Simulation')
+
+        self.update_interval_data = 0.050  # Update interval in seconds
+        self.clock_data = Clock.schedule_interval(self.update_data, self.update_interval_data)
+
         # Schedule update every second
-        self.update_interval = 0.1  # Update interval in seconds
+        self.update_interval = 3  # Update interval in seconds
         self.time_elapsed = 0.0  # Time elapsed in seconds
-        Clock.schedule_interval(self.update_plots, self.update_interval)
+        self.clock_plot = Clock.schedule_interval(self.update_plots, self.update_interval)
+        # Schedule update every second
+        
+
+    def update_data(self,dt):
+        all_data_row = pd.DataFrame()
+        for obj in self.objects:
+            obj_data = pd.DataFrame([self.sim.unpackTable(self.sim.readCustomDataBlock(obj,'customData'))])
+            obj_data = self.data_process(obj_data)
+            data = self.select_rename_columns(obj,obj_data)
+            all_data_row = pd.concat([all_data_row,data],axis=1)
+            if obj == self.camera_EoL:
+                data_EoL = data
+
+        EoL_nodes = ['EoL_1_X', 'EoL_1_Y',
+                    'EoL_2_X', 'EoL_2_Y',
+                    'EoL_3_X', 'EoL_3_Y',
+                    'EoL_4_X', 'EoL_4_Y',
+                    'EoL_5_X','EoL_5_Y',
+                    'EoL_6_X', 'EoL_6_Y']
+        
+        for index, row in data_EoL.iterrows():
+            non_zero_count = (row != 0.0).sum()
+            total_count = len(EoL_nodes)
+            score = (non_zero_count / total_count) * 100
+            self.scores.append(score)
+
+        self.data_out = pd.concat([self.data_out, all_data_row],ignore_index=True)
+        self.t_data = pd.concat([self.t_data,pd.DataFrame({'time': [self.sim.getSimulationTime()]})], ignore_index=True)
+        print(self.sim.getSimulationTime())
+        #self.sim.step()
 
     def on_spinner_select_1(self, spinner, text):
         
@@ -340,7 +395,6 @@ class MainLayout(WhiteBoxLayout):
             canvas.draw()
 
         num_graphs = len(self.graphs)
-
         if text == 'Robot 1':
             self.graph_count = 7
             self.object = self.rob_1
@@ -382,55 +436,81 @@ class MainLayout(WhiteBoxLayout):
             self.left_panel.remove_widget(graph_to_remove)
 
     def on_spinner_select_2(self, spinner, text):
-        # Placeholder for updating graphs based on spinner selection
-        print(f"Selected: {text}")
+        if text == 'Gripper 1' or text == 'Gripper 2':
+            self.sim.callScriptFunction(self.inter['Normal'],
+                                        self.sim.getScript(self.sim.scripttype_customizationscript, self.inter_script))
+            self.sim.callScriptFunction(self.inter[text],
+                                        self.sim.getScript(self.sim.scripttype_customizationscript, self.inter_script))
+        elif text == 'Normal':
+            self.sim.callScriptFunction(self.inter[text],
+                                        self.sim.getScript(self.sim.scripttype_customizationscript, self.inter_script))
     
-    def select_columns(self,data):
-        if self.object == self.camera_1:
+    def select_rename_columns(self,obj,data):
+        if obj == self.camera_1:
             data = data[['sizeX','sizeY']]
             data = data.rename(columns={'sizeX': 'cam_1_X','sizeY': 'cam_1_Y'})
-        elif self.object == self.camera_2:
+        elif obj == self.camera_2:
             data = data[['sizeX','sizeY']]
             data = data.rename(columns={'sizeX': 'cam_2_X','sizeY': 'cam_2_Y'})
-        elif self.object == self.camera_3:
+        elif obj== self.camera_3:
             data = data[['sizeX','sizeY']]
             data = data.rename(columns={'sizeX': 'cam_3_X','sizeY': 'cam_3_Y'})
-        elif self.object == self.camera_EoL:
-            data = data[['part1SizeX','part2SizeX','part3SizeX','part4SizeX',
-                        'part1SizeY','part2SizeY','part3SizeY','part4SizeY',
-                        'tray1SizeX','tray1SizeY','tray2SizeX','tray2SizeY']]
-            data = data.rename(columns={'part1SizeX':'EoL_3_X','part2SizeX':'EoL_4_X','part3SizeX':'EoL_5_X','part4SizeX':'EoL_6_X',
+        elif obj == self.camera_EoL:
+            target_columns = ['part1SizeX','part2SizeX','part3SizeX','part4SizeX',
+                              'part1SizeY','part2SizeY','part3SizeY','part4SizeY',
+                              'tray1SizeX','tray1SizeY','tray2SizeX','tray2SizeY']
+            target_rename = {'part1SizeX':'EoL_3_X','part2SizeX':'EoL_4_X','part3SizeX':'EoL_5_X','part4SizeX':'EoL_6_X',
                                         'part1SizeY':'EoL_3_Y','part2SizeY':'EoL_4_Y','part3SizeY':'EoL_5_Y', 'part4SizeY':'EoL_6_Y',
                                         'tray1SizeX':'EoL_1_X','tray1SizeY':'EoL_1_Y',
-                                        'tray2SizeX':'EoL_2_X','tray2SizeY':'EoL_2_Y'})
-        elif self.object == self.rob_1:
+                                        'tray2SizeX':'EoL_2_X','tray2SizeY':'EoL_2_Y'}
+            present_columns = [col for col in target_columns if col in data.columns]
+            data = data[present_columns]
+            data = data.rename(columns=target_rename)
+        elif obj == self.rob_1:
             data = data[['jointVelo1','jointVelo2', 'jointVelo4',	'maxVel','gripperSupply','gripperVacuum','jointVelo3']]
             data = data.rename(columns={'jointVelo1':'rob_1_1','jointVelo2':'rob_1_2','jointVelo3':'rob_1_3','jointVelo4':'rob_1_4',
                                         'maxVel':'rob_1_maxVel','gripperSupply':'rob_1_supply','gripperVacuum':'rob_1_vacuum'})
-        elif self.object == self.rob_2:
+        elif obj == self.rob_2:
             data = data[['jointVelo1','jointVelo2', 'jointVelo4',	'maxVel','gripperSupply','gripperVacuum','jointVelo3']]
             data = data.rename(columns={'jointVelo1':'rob_2_1','jointVelo2':'rob_2_2','jointVelo3':'rob_2_3','jointVelo4':'rob_2_4',
                                         'maxVel':'rob_2_maxVel','gripperSupply':'rob_2_supply','gripperVacuum':'rob_2_vacuum'})
         return data
     
-    def select_columns_EoL(self,data):
-        data = data[['part1SizeX','part2SizeX','part3SizeX','part4SizeX',
-                    'part1SizeY','part2SizeY','part3SizeY','part4SizeY',
-                    'tray1SizeX','tray1SizeY','tray2SizeX','tray2SizeY']]
-        data = data.rename(columns={'part1SizeX':'EoL_3_X','part2SizeX':'EoL_4_X','part3SizeX':'EoL_5_X','part4SizeX':'EoL_6_X',
-                                    'part1SizeY':'EoL_3_Y','part2SizeY':'EoL_4_Y','part3SizeY':'EoL_5_Y', 'part4SizeY':'EoL_6_Y',
-                                    'tray1SizeX':'EoL_1_X','tray1SizeY':'EoL_1_Y',
-                                    'tray2SizeX':'EoL_2_X','tray2SizeY':'EoL_2_Y'})
+    def select_columns(self,data):
+        if self.object == self.camera_1:
+            data = data[['cam_1_X','cam_1_Y']]
+        elif self.object == self.camera_2:
+            data = data[['cam_2_X','cam_2_Y']]
+        elif self.object == self.camera_3:
+            data = data[['cam_3_X','cam_3_Y']]
+        elif self.object == self.camera_EoL:
+            data = data[['EoL_3_X','EoL_4_X','EoL_5_X','EoL_6_X',
+                         'EoL_3_Y','EoL_4_Y','EoL_5_Y', 'EoL_6_Y',
+                         'EoL_1_X','EoL_1_Y',
+                         'EoL_2_X','EoL_2_Y']]
+        elif self.object == self.rob_1:
+            data = data[['rob_1_1','rob_1_2','rob_1_3','rob_1_4',
+                         'rob_1_maxVel','rob_1_supply','rob_1_vacuum']]
+        elif self.object == self.rob_2:
+            data = data[['rob_2_1','rob_2_2','rob_2_3','rob_2_4',
+                         'rob_2_maxVel','rob_2_supply','rob_2_vacuum']]
         return data
+    
+    def select_columns_EoL(self,data):
+        data = data[['EoL_3_X','EoL_4_X','EoL_5_X','EoL_6_X',
+                         'EoL_3_Y','EoL_4_Y','EoL_5_Y', 'EoL_6_Y',
+                         'EoL_1_X','EoL_1_Y',
+                         'EoL_2_X','EoL_2_Y']]
+        return data
+
+    def data_process(self,data : pd.DataFrame):
+        return data.replace(np.nan, 0).replace({True: 1, False: 0})
 
     def update_plots(self, dt):
         if self.sim.getSimulationTime() > 0:
             self.time_elapsed += self.update_interval
             i = 0
-            obj_data = pd.DataFrame([self.sim.unpackTable(self.sim.readCustomDataBlock(self.object,'customData'))])
-            data = self.select_columns(obj_data)
-            self.t_data = pd.concat([self.t_data,pd.DataFrame({'time': [self.sim.getSimulationTime()]})], ignore_index=True)
-            self.y_data = pd.concat([self.y_data,data], ignore_index=True) # Example: Random data point
+            data = self.select_columns(self.data_out)
 
             for canvas in self.graphs:
                 fig = canvas.figure
@@ -443,7 +523,7 @@ class MainLayout(WhiteBoxLayout):
                     ax.set_xlim(t_start,t_end)
 
                 # Update plot with new data
-                ax.plot(self.t_data['time'], self.y_data[column])
+                ax.plot(self.t_data['time'], data[column])
 
                 # Adjust plot limits if needed (optional)
                 ax.relim()
@@ -455,36 +535,32 @@ class MainLayout(WhiteBoxLayout):
                 # Redraw canvas to reflect updated plot
                 canvas.draw()
                 i +=1
-
-            obj_EoL = pd.DataFrame([self.sim.unpackTable(self.sim.readCustomDataBlock(self.camera_EoL,'customData'))])
-            data_EoL = self.select_columns_EoL(obj_EoL)
-
-            EoL_nodes = ['EoL_1_X', 'EoL_1_Y',
-                    'EoL_2_X', 'EoL_2_Y',
-                    'EoL_3_X', 'EoL_3_Y',
-                    'EoL_4_X', 'EoL_4_Y',
-                    'EoL_5_X','EoL_5_Y',
-                    'EoL_6_X', 'EoL_6_Y']
-            
-            for index, row in data_EoL.iterrows():
-                non_zero_count = (row != 0).sum()
-                total_count = len(EoL_nodes)
-                score = (non_zero_count / total_count) * 100
-                self.scores.append(score)
             
             fig_score = self.canvas_score.figure
             ax_score = fig_score.axes[0]
 
-            if self.sim.getSimulationTime() > 10: 
+            if self.sim.getSimulationTime() > 100: 
                 t_end = self.t_data['time'].iloc[-1]
-                t_start = t_end-10
+                t_start = t_end-100
                 ax_score.set_xlim(t_start,t_end)
+                ax_score.set_ylim(0,100)
+
+            if self.sim.getSimulationTime() > 35:
+                anomaly = []
+                if self.scores[-1] < 100:
+                    anomaly.append((t_end-35, t_end))
+                    self.anomaly_detected = True
+                    self.label.text = f'Anomaly Detected:{self.anomaly_detected}'
+
+                for start, end  in anomaly:
+                    ax_score.axvspan(start, end, color = 'orange', alpha=0.5)
 
             ax_score.plot(self.t_data['time'], self.scores)
             self.canvas_score.draw()
             
 class MyApp(App):
     def build(self):
+        self.title = 'Root Cause Analysis Demo - Pick and Place'
         return MainLayout()
 
 if __name__ == '__main__':

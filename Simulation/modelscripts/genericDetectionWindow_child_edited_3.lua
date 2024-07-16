@@ -342,9 +342,8 @@ function sysCall_sensing()
   camData = sim.unpackTable(sim.readCustomDataBlock(cam,'customData'))
 
   idPart = camData['id']
-  --camDetect = camData['detect']
+  camDetect = camData['detect']
   camEnabled = camData['enabledCamera']
-
 
   --print(camDetect)
   
@@ -355,7 +354,7 @@ function sysCall_sensing()
   local detect = false
 
   if (enabledDetection['enabledDetection'] == true) then
-    if  camEnabled then
+    if  camDetect or not camEnabled then 
         detect = true
     end
   end

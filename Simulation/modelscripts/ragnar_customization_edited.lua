@@ -493,7 +493,7 @@ function updateMovementParamDisplay()
         simUI.setEditValue(ui,1002,simBWF.format("%.0f , %.0f , %.0f",off[1]*1000,off[2]*1000,off[3]*1000),true)
         simUI.setEditValue(ui,1003,simBWF.format("%.0f",c['pickRounding']*1000),true)
         simUI.setEditValue(ui,1004,simBWF.format("%.0f",c['placeRounding']*1000),true)
-        simUI.setEditValue(ui,2010,simBWF.format("%.0f",customData['gripperPower']),true)
+        simUI.setEditValue(ui,2010,simBWF.format("%.0f",customData['gripperSupply']),true)
         simUI.setEditValue(ui,1005,simBWF.format("%.0f",c['pickNulling']*1000),true)
         simUI.setEditValue(ui,1006,simBWF.format("%.0f",c['placeNulling']*1000),true)
         simUI.setEditValue(ui,1007,simBWF.format("%.0f",c['pickApproachHeight']*1000),true)
@@ -795,12 +795,12 @@ function placeApproachHeightChange_callback(uiHandle,id,newValue)
     updateMovementParamDisplay()
 end
 
-function gripperPower_callback(uiHandle,id,newValue)
+function gripperSupply_callback(uiHandle,id,newValue)
     local c=readCustomInfo()
     newValue=tonumber(newValue)
     if newValue <= 100 then
-        if newValue~=c['gripperPower'] then
-            c['gripperPower']=newValue
+        if newValue~=c['gripperSupply'] then
+            c['gripperSupply']=newValue
             writeCustomInfo(c)
             simBWF.markUndoPoint()
         end
@@ -1610,7 +1610,7 @@ function createDlg()
                 <checkbox text="" on-change="pickWithoutTargetClicked_callback" id="2001"/>
 
                 <label text="Gripper power (%)"/>
-                <edit on-editing-finished="gripperPower_callback" id="2010"/>
+                <edit on-editing-finished="gripperSupply_callback" id="2010"/>
 
                 <label text="Attach part to target"/>
                 <checkbox text="" on-change="attachPartClicked_callback" id="2000"/>
@@ -1853,7 +1853,7 @@ function sysCall_init()
     ----------------------------------------
     writeInfo(_info)
     adjustMaxVelocityMaxAcceleration()
-    local customData = writeCustomInfo({gripperPower = 100, jointVelo1 = 0, jointVelo2 = 0, jointVelo3 = 0, jointVelo4 = 0, maxVel = 5})
+    local customData = writeCustomInfo({gripperSupply = 100, gripperVacuum = 0, jointVelo1 = 0, jointVelo2 = 0, jointVelo3 = 0, jointVelo4 = 0, maxVel = _info['maxVel']})
     connected=false
     paused=false
 
@@ -1999,13 +1999,16 @@ function sysCall_afterSimulation()
     updateEnabledDisabledItems()
     local c=readInfo()
     local customC = readCustomInfo()
-    customC['maxVel'] = 5
-    customC['gripperPower'] = 100
+    customC['maxVel'] = 2
+    customC['gripperSupply'] = 100
+    customC['gripperVacuum'] = 0
+    c['maxVel'] = 2
     if (c['bitCoded']&256)==256 then
         sim.setObjectInt32Param(workspace,sim.objintparam_visibility_layer,1)
     else
         sim.setObjectInt32Param(workspace,sim.objintparam_visibility_layer,0)
     end
+    writeInfo(c)
     writeCustomInfo(customC)
 end
 

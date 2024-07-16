@@ -104,7 +104,7 @@ function sysCall_actuation()
     math.randomseed(time,speed_noise)
 
     -- using Box_Muller method
-    local noise = (((2*math.log(1/math.random()))^.5)*math.cos(2*math.pi*math.random())*0.5)
+    local noise = (((2*math.log(1/math.random()))^.5)*math.cos(2*math.pi*math.random())*0.10)
     if base_speed ~= 0 then
         speed_noise = base_speed+ noise --2.5*math.sin(math.pi*2*sim.getSimulationTime()/20+phase_shift)
     else

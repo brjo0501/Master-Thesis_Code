@@ -777,17 +777,17 @@ function sysCall_suspend()
     showOrHideUiIfNeeded()
 end
 
-function sysCall_afterSimulation()
-    updateEnabledDisabledItems()
-    local conf=readInfo()
-    local customConf = readCustomInfo()
-    customConf['speed'] = 80
-    conf['velocity'] = customConf['speed']/1000
-    conf['encoderDistance']=0
-    conf['stopRequests']={}
-    writeInfo(customConf)
-    writeInfo(conf)
-end
+-- function sysCall_afterSimulation()
+--     updateEnabledDisabledItems()
+--     local conf=readInfo()
+--     local customConf = readCustomInfo()
+--     customConf['speed'] = 80
+--     conf['velocity'] = customConf['speed']/1000
+--     conf['encoderDistance']=0
+--     conf['stopRequests']={}
+--     writeInfo(customConf)
+--     writeInfo(conf)
+-- end
 
 function sysCall_beforeSimulation()
     simJustStarted=true
