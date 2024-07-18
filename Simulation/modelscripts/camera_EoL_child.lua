@@ -222,9 +222,9 @@ function sysCall_vision(inData)
                 eventList[newEntry] = eventInput
                 sim.writeCustomDataBlock(events,'customData',sim.packTable(eventList))
 
-                local productTrigger = {newProduct = true}
-                sim.writeCustomDataBlock(products,'customData',sim.packTable(productTrigger))
-
+                productsData = sim.unpackTable(sim.readCustomDataBlock(products,'customData'))
+                productsData['newProduct'] = {true}
+                sim.writeCustomDataBlock(products,'customData',sim.packTable(productsData))
                 assemblyCounter = assemblyCounter + 1
             end
         elseif blobCount > 1 and blobData[12] > 0.48 and blobData[12] < 0.52 then

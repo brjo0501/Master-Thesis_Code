@@ -5,13 +5,13 @@ simVision = require 'simVision'
 RingBuffer = require("modelscripts/ring_buffer")
 
 function sysCall_init()
-    
+
     products = sim.getObject('.')
-    
+
     camera1 = sim.getObject("/camera_1/camera")
     camera2 = sim.getObject("/camera_2/camera")
     camera3= sim.getObject("/camera_3/camera")
-    
+
     cameraEoL = sim.getObject("/camera_EoL/camera")
 
     conveyor1 = sim.getObject("/genericConveyorTypeA[0]")
@@ -20,10 +20,10 @@ function sysCall_init()
 
     rob1 = sim.getObject("/Ragnar[0]")
     rob2 = sim.getObject("/Ragnar[1]")
-    
-    productsData = {newProduct = false, data = {}}
+
+    productsData = {newProduct = {false}}
     writeCustomInfo(productsData)
-    
+
     data ={}
     partsCount = 0
     productData = {}
@@ -36,25 +36,18 @@ function vacuumCheck(list)
 end
 
 function sysCall_actuation()
+
     productsData = readCustomInfo()
-    
-    if productsData['newProduct'] then
-        
-        rob1Clear = sim.unpackTable(sim.readCustomDataBlock(rob1,'bufferTrigger'))
-        rob1Clear['fillTrigger'] = true
-        sim.writeCustomDataBlock(rob1,'bufferTrigger',sim.packTable(rob1Clear))
-        
-        rob2Clear = sim.unpackTable(sim.readCustomDataBlock(rob2,'bufferTrigger'))
-        rob2Clear['fillTrigger'] = true
-        sim.writeCustomDataBlock(rob1,'bufferTrigger',sim.packTable(rob2Clear))
-    
+
+    if productsData['newProduct'][1] then
+
         partsCount = partsCount + 1
         cam1Buffer = readBuffer(camera1,'buffer')
         cam2Buffer = readBuffer(camera2,'buffer')
         cam3Buffer = readBuffer(camera3,'buffer')
-        
+
         camEoLBuffer = readBuffer(cameraEoL,'buffer')
-        
+
         rob1_1Buffer = readBuffer(rob1,'buffer1')
         rob1_2Buffer = readBuffer(rob1,'buffer2')
         rob1_3Buffer = readBuffer(rob1,'buffer3')
@@ -63,7 +56,7 @@ function sysCall_actuation()
         rob1_SupplyBuffer = readBuffer(rob1,'buffer5')
         rob1_VacuumBuffer = readBuffer(rob1,'buffer6')
         rob1_MaxVelBuffer = readBuffer(rob1,'buffer7')
-        
+
         rob2_1Buffer = readBuffer(rob2,'buffer1')
         rob2_2Buffer = readBuffer(rob2,'buffer2')
         rob2_3Buffer = readBuffer(rob2,'buffer3')
@@ -72,7 +65,7 @@ function sysCall_actuation()
         rob2_SupplyBuffer = readBuffer(rob2,'buffer5')
         rob2_VacuumBuffer = readBuffer(rob2,'buffer6')
         rob2_MaxVelBuffer = readBuffer(rob2,'buffer7')
-        
+
         camEoLData = camEoLBuffer:pop()
         writeBuffer(cameraEoL,'buffer',camEoLBuffer)
         productData['EoL'] = {camEoLData[2],camEoLData[3],camEoLData[4],camEoLData[5],
@@ -111,12 +104,12 @@ function sysCall_actuation()
                 productData['Rob2 Joint 4.'..i] = rob2_4Data
             end
         end
-        
+
         rob1_VacuumData = rob1_VacuumBuffer:pop()
         writeBuffer(rob1,'buffer6',rob1_VacuumBuffer)
         rob1_VacuumBuffer = readBuffer(rob1,'buffer6')
         productData['Rob1 Vacuum'] = rob1_VacuumData
-                
+
         rob1_SupplyData = rob1_SupplyBuffer:pop()
         writeBuffer(rob1,'buffer5',rob1_SupplyBuffer)
         productData['Rob1 Supply'] = rob1_SupplyData
@@ -144,18 +137,16 @@ function sysCall_actuation()
         cam2Data = cam2Buffer:pop()
         writeBuffer(camera2,'buffer',cam2Buffer)
         productData['Sub-Part 2'] = {cam2Data[2],cam2Data[3]}
-        
+
         cam3Data = cam3Buffer:pop()
         writeBuffer(camera3,'buffer',cam3Buffer)
         productData['Sub-Part 3'] = {cam3Data[2],cam3Data[3]}
+
+        productsData['ID'..partsCount] = productData
         
-        data['ID'..partsCount] = productData
-
-        --print(data)
-
         productData = {}
 
-        productsData['newProduct'] = false
+        productsData['newProduct'] = {false}
 
         writeCustomInfo(productsData)
     end
@@ -170,7 +161,7 @@ function readCustomInfo()
 end
 
 function writeCustomInfo(data)
-    
+
     if data then
         sim.writeCustomDataBlock(products,'customData',sim.packTable(data))
     else

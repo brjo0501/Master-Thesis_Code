@@ -31,7 +31,6 @@ function sysCall_init()
     writeBuffer(buffer6,'buffer6')
     writeBuffer(buffer7,'buffer7')
 
-
     move1Data = {}
     move2Data = {}
     move3Data = {}
@@ -1149,8 +1148,6 @@ RobPlace = function(TrackPart,detachPart,approachHeight,blend,nulling,dwTime,att
     writeBuffer(buffer5,'buffer5')
     writeBuffer(buffer6,'buffer6')
     writeBuffer(buffer7,'buffer7')
-
-    print(buffer6)
 
     move1Data = {}
     move2Data = {}
