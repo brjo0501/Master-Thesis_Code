@@ -23,15 +23,24 @@ import time
 import datetime
 from kivy.metrics import dp
 
-def draw_save(G,pos,node_colors,file_name:str, inter_type:str):
-    # Draw the graph
-    plt.figure(figsize=(12, 10))
-    plt.xlim((-12,14))
-    plt.ylim((-12,8))
-    plt.title(f'Causal Graph: {inter_type}', fontsize=24)
-    nx.draw(G, pos,with_labels=True,node_size=4000, node_color=[node_colors[node] for node in G.nodes()], font_size=12, arrowsize=8,width=0.5)
-    plt.savefig(file_name)
-    nx.write_gml(G, f'{file_name[:-4]}.gml')
+import pyrca
+
+from pyrca.analyzers.ht import HT, HTConfig
+from pyrca.analyzers.epsilon_diagnosis import EpsilonDiagnosis, EpsilonDiagnosisConfig
+from pyrca.analyzers.bayesian import BayesianNetwork, BayesianNetworkConfig
+from pyrca.analyzers.random_walk import RandomWalk, RandomWalkConfig
+from pyrca.analyzers.rcd import RCD, RCDConfig
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import os
+
+from sklearn.exceptions import ConvergenceWarning
+
+import warnings
+warnings.filterwarnings("ignore", category=RuntimeWarning)
+warnings.filterwarnings("ignore", category=ConvergenceWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
 
 class WhiteBoxLayout(BoxLayout):
     def __init__(self, **kwargs):
@@ -62,7 +71,6 @@ class CloseBoxLayout(BoxLayout):
         super(CloseBoxLayout, self).__init__(**kwargs)
         self.padding = [0, 0, 0, 0]
         self.spacing = 0
-
 
 class CloseGridLayout(GridLayout):
     def __init__(self, **kwargs):
@@ -110,6 +118,17 @@ class MainLayout(WhiteBoxLayout):
         self.data_out = pd.DataFrame()
         self.graphs = []
         self.scores = []
+
+        self.colors = {
+        'cam_1_X':'skyblue', 'cam_2_X':'skyblue', 'cam_3_X':'skyblue',
+        'cam_1_Y':'skyblue', 'cam_2_Y':'skyblue', 'cam_3_Y':'skyblue',
+        'EoL_1_X':'lightgreen', 'EoL_2_X':'lightgreen', 'EoL_3_X':'lightgreen', 'EoL_4_X':'lightgreen', 'EoL_5_X':'lightgreen', 'EoL_6_X':'lightgreen',
+        'EoL_1_Y':'lightgreen', 'EoL_2_Y':'lightgreen', 'EoL_3_Y':'lightgreen', 'EoL_4_Y':'lightgreen', 'EoL_5_Y':'lightgreen', 'EoL_6_Y':'lightgreen',
+        'score':'lightsalmon',
+        'rob_1_1':'tan', 'rob_1_2':'tan', 'rob_1_3':'tan', 'rob_1_4':'tan', 'rob_1_maxVel':'tan',
+        'rob_2_1':'tan', 'rob_2_2':'tan', 'rob_2_3':'tan', 'rob_2_4':'tan', 'rob_2_maxVel':'tan',
+        'rob_1_vacuum':'tan', 'rob_2_vacuum':'tan','rob_1_supply':'tan', 'rob_2_supply':'tan',
+        'con_1':'lightgrey','con_2':'lightgrey','con_3':'lightgrey'}
         
         # Right Panel for Button, Select Box, and NetworkX Graph
         right_panel = WhiteBoxLayout(orientation='vertical', size_hint_x=0.5)
@@ -295,23 +314,12 @@ class MainLayout(WhiteBoxLayout):
         'rob_1_vacuum':(2,1), 'rob_2_vacuum':(5,-4),'rob_1_supply':(5,1), 'rob_2_supply':(8,-4),
         'con_1':(8,-1),'con_2':(8,6),'con_3':(3,6)}
 
-        colors = {
-        'cam_1_X':'skyblue', 'cam_2_X':'skyblue', 'cam_3_X':'skyblue',
-        'cam_1_Y':'skyblue', 'cam_2_Y':'skyblue', 'cam_3_Y':'skyblue',
-        'EoL_1_X':'lightgreen', 'EoL_2_X':'lightgreen', 'EoL_3_X':'lightgreen', 'EoL_4_X':'lightgreen', 'EoL_5_X':'lightgreen', 'EoL_6_X':'lightgreen',
-        'EoL_1_Y':'lightgreen', 'EoL_2_Y':'lightgreen', 'EoL_3_Y':'lightgreen', 'EoL_4_Y':'lightgreen', 'EoL_5_Y':'lightgreen', 'EoL_6_Y':'lightgreen',
-        'score':'lightsalmon',
-        'rob_1_1':'tan', 'rob_1_2':'tan', 'rob_1_3':'tan', 'rob_1_4':'tan', 'rob_1_maxVel':'tan',
-        'rob_2_1':'tan', 'rob_2_2':'tan', 'rob_2_3':'tan', 'rob_2_4':'tan', 'rob_2_maxVel':'tan',
-        'rob_1_vacuum':'tan', 'rob_2_vacuum':'tan','rob_1_supply':'tan', 'rob_2_supply':'tan',
-        'con_1':'lightgrey','con_2':'lightgrey','con_3':'lightgrey'}
-
         G.add_nodes_from(nodes)
         G.add_edges_from(edges)
         ax.set_xlim(-12,14)
         ax.set_ylim(-12,8)
         ax.set_title(f'Causal Graph:', fontsize=12)
-        nx.draw(G, pos,with_labels=True,node_size=1500, node_color=[colors[node] for node in G.nodes()], font_size=6, arrowsize=8,width=0.5)
+        nx.draw(G, pos,with_labels=True,node_size=1500, node_color=[self.colors[node] for node in G.nodes()], font_size=6, arrowsize=8,width=0.5)
         return fig
 
     def on_button_press(self, instance):
@@ -341,8 +349,7 @@ class MainLayout(WhiteBoxLayout):
         self.clock_data.cancel()
         self.clock_plot.cancel()
         self.sim.pauseSimulation()
-             
-    
+                
     def start_sim(self, instance):
         #self.sim.setStepping(True)
         self.sim.startSimulation()
@@ -358,7 +365,6 @@ class MainLayout(WhiteBoxLayout):
         self.clock_plot = Clock.schedule_interval(self.update_plots, self.update_interval)
         # Schedule update every second
         
-
     def update_data(self,dt):
         all_data_row = pd.DataFrame()
         for obj in self.objects:
@@ -512,6 +518,30 @@ class MainLayout(WhiteBoxLayout):
             i = 0
             data = self.select_columns(self.data_out)
 
+            fig_score = self.canvas_score.figure
+            ax_score = fig_score.axes[0]
+
+            if self.sim.getSimulationTime() > 100: 
+                t_end = self.t_data['time'].iloc[-1]
+                t_start = t_end-100
+                ax_score.set_xlim(t_start,t_end)
+                ax_score.set_ylim(0,100)
+
+            anomaly = []
+
+            if self.sim.getSimulationTime() > 35 and not self.anomaly_detected:
+                anomaly = []
+                if self.scores[-1] < 100:
+                    anomaly.append((t_end-35, t_end))
+                    self.anomaly_detected = True
+                    self.label.text = f'Anomaly Detected: {t_end} - {self.anomaly_detected}'
+
+                for start, end  in anomaly:
+                    ax_score.axvspan(start, end, color = 'orange', alpha=0.5)
+
+            ax_score.plot(self.t_data['time'], self.scores)
+            self.canvas_score.draw()
+
             for canvas in self.graphs:
                 fig = canvas.figure
                 column = data.columns[i]
@@ -532,32 +562,84 @@ class MainLayout(WhiteBoxLayout):
                 ax.set_title(f'Data:{column}')
                 ax.set_xlabel('Time')
                 ax.set_ylabel('Value')
+
+                if self.anomaly_detected :
+                    ax.axvspan(start, end, color = 'orange', alpha=0.5)
+
                 # Redraw canvas to reflect updated plot
                 canvas.draw()
                 i +=1
             
-            fig_score = self.canvas_score.figure
-            ax_score = fig_score.axes[0]
 
-            if self.sim.getSimulationTime() > 100: 
-                t_end = self.t_data['time'].iloc[-1]
-                t_start = t_end-100
-                ax_score.set_xlim(t_start,t_end)
-                ax_score.set_ylim(0,100)
+    def run_HT(self,
+            normal_df: pd.DataFrame,
+            abnormal_df: pd.DataFrame,
+            G: nx.DiGraph,
+            nodes: list,
+            edges:dict,
+            key_nodes: list,
+            colors: dict,
+            pos: dict):
+     
+        G.add_nodes_from(nodes)
+        G.add_edges_from(edges)  # Make sure `edges` is defined somewhere
 
-            if self.sim.getSimulationTime() > 35:
-                anomaly = []
-                if self.scores[-1] < 100:
-                    anomaly.append((t_end-35, t_end))
-                    self.anomaly_detected = True
-                    self.label.text = f'Anomaly Detected:{self.anomaly_detected}'
+        adj_matrix_extended_pd = nx.to_pandas_adjacency(G, nodes)
+        
+        interventions = {'gripper_1':'interGripper1',
+                        'gripper_2':'interGripper2',
+                        'max_Vel_1':'interVeloRob1',
+                        'max_Vel_2':'interVeloRob2',
+                        'camera_1':'interCamera1',
+                        'camera_2':'interCamera2',
+                        'camera_3':'interCamera3',
+                        'conveyor_1':'interConveyor1',
+                        'conveyor_2':'interConveyor2',
+                        'conveyor_3':'interConveyor3',
+                        'feeder_1':'interFeeder1',
+                        'feeder_2':'interFeeder2',
+                        'feeder_3':'interFeeder3',
+                        'size_1':'interSize1',
+                        'size_2':'interSize2',
+                        'size_3':'interSize3'}
+        
+        
+        abnormal_df = pd.DataFrame()
 
-                for start, end  in anomaly:
-                    ax_score.axvspan(start, end, color = 'orange', alpha=0.5)
+        model = HT(config=HTConfig(adj_matrix_extended_pd))
+        model.train(normal_df)
+        
+        abnormal_nodes = []
+        new_colors = colors.copy()
 
-            ax_score.plot(self.t_data['time'], self.scores)
-            self.canvas_score.draw()
-            
+        results = pd.DataFrame()
+
+        for node in key_nodes:
+            if (abnormal_df[node] <100).any(): # Score instead of EoL
+                abnormal_nodes.append(node)
+                new_colors[node] = 'yellow'
+                results[node] = model.find_root_causes(abnormal_df, node, True).to_list()
+
+        rank1_root_cause = []
+        rank2_root_cause = []
+        rank3_root_cause = []
+
+        for node in abnormal_nodes:
+            rank1_root_cause.append(results[node][0]['root_cause'])
+            rank2_root_cause.append(results[node][1]['root_cause'])
+            rank3_root_cause.append(results[node][2]['root_cause'])
+
+        for node in rank1_root_cause:
+            new_colors[node] = 'red'
+
+        for node in rank2_root_cause:
+            new_colors[node] = 'crimson'
+
+        for node in rank3_root_cause:
+            new_colors[node] = 'lightcoral'
+
+        return [abnormal_nodes,new_colors]  
+
 class MyApp(App):
     def build(self):
         self.title = 'Root Cause Analysis Demo - Pick and Place'

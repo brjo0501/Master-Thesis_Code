@@ -6,7 +6,7 @@ simUI=require'simUI'
 function sysCall_afterSimulation()
     local productsData = readCustomInfo()
     local datetime = os.date('%Y-%m-%d_%H-%M-%S')
-    local filename = sim.getStringParameter(sim.stringparam_scene_path)..'/DataSet_Product/Data_Product_'..datetime..'.csv'
+    local filename = sim.getStringParameter(sim.stringparam_scene_path)..'/Dataset_Product/Data_Product_'..datetime..'.csv'
     dataToCSV(productsData,filename)
 end
 
@@ -57,9 +57,10 @@ function dataToCSV(data, filename)
         end
     end
 
-    local file = io.open(filename, 'w+')
-    file:write(table.concat(headers, ',') .. '\n')
+    print(headers)
 
+    file = io.open(filename, 'w+')
+    file:write(table.concat(headers, ',') .. '\n')
     for id,subData in pairs(data) do
         local maxLength = 0
         for _, list in pairs(subData) do
@@ -75,10 +76,11 @@ function dataToCSV(data, filename)
                 local value = subData[subKey] and subData[subKey][i] or 0
                 table.insert(row, processData(value))
             end
-            --file:write(table.concat(row, ',') .. '\n')
+            file:write(table.concat(row, ',') .. '\n')
         end
     end
     file:close()
+    
 end
 
 function processData(value)

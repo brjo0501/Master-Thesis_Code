@@ -79,15 +79,15 @@ function sysCall_actuation()
 
             rob2_SupplyData = rob2_SupplyBuffer:pop()
             writeBuffer(rob2,'buffer5',rob2_SupplyBuffer)
-            productData['Rob2 Supply'] = rob2_SupplyData
+            productData['Rob2 Supply '..i] = rob2_SupplyData
 
             rob2_VacuumData = rob2_VacuumBuffer:pop()
             writeBuffer(rob2,'buffer6',rob2_VacuumBuffer)
-            productData['Rob2 Vacuum'] = rob2_VacuumData
+            productData['Rob2 Vacuum '..1] = rob2_VacuumData
 
             rob2_MaxVelData = rob2_MaxVelBuffer:pop()
             writeBuffer(rob2,'buffer7',rob2_MaxVelBuffer)
-            productData['Rob2 Max Vel'] = rob2_MaxVelData
+            productData['Rob2 Max Vel '..i] = rob2_MaxVelData
 
             if  (camEoLData[2*i+4] and camEoLData[2*i+5]) or not vacuumCheck(rob2_VacuumData) then
                 rob2_1Data = rob2_1Buffer:pop()
@@ -143,6 +143,8 @@ function sysCall_actuation()
         productData['Sub-Part 3'] = {cam3Data[2],cam3Data[3]}
 
         productsData['ID'..partsCount] = productData
+
+        print(productsData)
         
         productData = {}
 

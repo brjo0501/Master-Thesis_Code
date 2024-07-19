@@ -17,9 +17,9 @@ function sysCall_init()
     buffer2 = RingBuffer:new(25)
     buffer3 = RingBuffer:new(25)
     buffer4 = RingBuffer:new(25)
-    buffer5 = RingBuffer:new(7)
-    buffer6 = RingBuffer:new(7)
-    buffer7 = RingBuffer:new(7)
+    buffer5 = RingBuffer:new(25)
+    buffer6 = RingBuffer:new(25)
+    buffer7 = RingBuffer:new(25)
 
     writeBuffer(buffer1,'buffer1')
     writeBuffer(buffer2,'buffer2')
@@ -41,6 +41,10 @@ function sysCall_init()
 
     assemblyCounter = 1
     partCounter = 1
+
+    enableProduct = false
+
+    sim.writeCustomDataBlock(model,'productTrigger',sim.packTable({trigger = false}))
 end
 
 function readBuffer(buffer)
@@ -68,10 +72,11 @@ function sysCall_actuation()
             error(errorMsg)
         end
     end
-    data = sim.unpackTable(sim.readCustomDataBlock(model,'customData'))
 
-    --print(data)
-    --print('test2',data['maxVel'])
+    data = sim.unpackTable(sim.readCustomDataBlock(model,'customData'))
+    rob_data = sim.unpackTable(sim.readCustomDataBlock(model,simBWF.modelTags.RAGNAR))
+
+    --print('test1',data['maxVel'])
 
     joint1=sim.getObject('./Ragnar_A1DrivingJoint1')
     joint2=sim.getObject('./Ragnar_A1DrivingJoint2')
@@ -82,11 +87,16 @@ function sysCall_actuation()
     data['jointVelo2'] = sim.getJointVelocity(joint2)
     data['jointVelo3'] = sim.getJointVelocity(joint3)
     data['jointVelo4'] = sim.getJointVelocity(joint4)
+
     local noise1 = (((2*math.log(1/math.random()))^.5)*math.cos(2*math.pi*math.random())*0.02)
     local noise2 = (((2*math.log(1/math.random()))^.5)*math.sin(2*math.pi*math.random())*0.5)-0.5
     local noise3 = (((2*math.log(1/math.random()))^.5)*math.sin(2*math.pi*math.random())*0.5)
-    maxVel_noise = base_vel+ noise1 --0.05*math.sin(math.pi*2*sim.getSimulationTime()/10+phase_shift1)
+    maxVel_noise = base_vel + noise1 --0.05*math.sin(math.pi*2*sim.getSimulationTime()/10+phase_shift1)
+
     data['maxVel'] = maxVel_noise
+    rob_data['maxVel'] = data['maxVel']
+    sim.writeCustomDataBlock(model, 'customData',sim.packTable(data))
+    sim.writeCustomDataBlock(model, simBWF.modelTags.RAGNAR,sim.packTable(rob_data))
 
     if data['gripperSupply'] == 30 then
         base_gripper = 30
@@ -106,7 +116,41 @@ function sysCall_actuation()
     end
 
     sim.writeCustomDataBlock(model, 'customData',sim.packTable(data))
-    --print(data)
+
+    trigger = sim.unpackTable(sim.readCustomDataBlock(model,'productTrigger'))
+
+    
+
+    if enableProduct then
+        table.insert(supplyData,robData['gripperSupply'])
+        table.insert(vacuumData,robData['gripperVacuum'])
+        table.insert(maxVelData,robData['maxVel'])
+    end
+    
+    if trigger['trigger'] and vacuumData[1] ~= nil  then
+        enableProduct = true
+        buffer5 = readBuffer('buffer5')
+        buffer6 = readBuffer('buffer6')
+        buffer7 = readBuffer('buffer7')
+    
+        buffer5:push(supplyData)
+        buffer6:push(vacuumData)
+        buffer7:push(maxVelData)
+    
+        writeBuffer(buffer5,'buffer5')
+        writeBuffer(buffer6,'buffer6')
+        writeBuffer(buffer7,'buffer7')
+
+        supplyData = {}
+        vacuumData = {}
+        maxVelData = {}
+
+        sim.writeCustomDataBlock(model,'productTrigger',sim.packTable({trigger = false}))
+    elseif trigger['trigger'] and vacuumData[1] == nil then
+        enableProduct = true
+        sim.writeCustomDataBlock(model,'productTrigger',sim.packTable({trigger = false}))
+    end
+
 end
 
 function ragnar_startPickTime()
@@ -954,16 +998,12 @@ RobPick = function(partData,attachPart,theStackingShift,approachHeight,blend,nul
     app = approachHeight
     while (mDone < 4) do
 
+        robData = sim.unpackTable(sim.readCustomDataBlock(model,'customData'))
+        
         table.insert(move1Data,sim.getJointVelocity(joint1))
         table.insert(move2Data,sim.getJointVelocity(joint2))
         table.insert(move3Data,sim.getJointVelocity(joint3))
         table.insert(move4Data,sim.getJointVelocity(joint4))
-
-        robData = sim.unpackTable(sim.readCustomDataBlock(model,'customData'))
-        
-        table.insert(supplyData,robData['gripperSupply'])
-        table.insert(vacuumData,robData['gripperVacuum'])
-        table.insert(maxVelData,robData['maxVel'])
 
         local dt=sim.getSimulationTimeStep()
         partPos = sim.getObjectPosition(dummyHandleToFollow,model)
@@ -1032,16 +1072,12 @@ RobPlace = function(TrackPart,detachPart,approachHeight,blend,nulling,dwTime,att
     placeHeight = 0.01
     while (mDone < 4) do
 
+        robData = sim.unpackTable(sim.readCustomDataBlock(model,'customData'))
+        
         table.insert(move1Data,sim.getJointVelocity(joint1))
         table.insert(move2Data,sim.getJointVelocity(joint2))
         table.insert(move3Data,sim.getJointVelocity(joint3))
         table.insert(move4Data,sim.getJointVelocity(joint4))
-
-        robData = sim.unpackTable(sim.readCustomDataBlock(model,'customData'))
-        
-        table.insert(supplyData,robData['gripperSupply'])
-        table.insert(vacuumData,robData['gripperVacuum'])
-        table.insert(maxVelData,robData['maxVel'])
 
         local dt=sim.getSimulationTimeStep()
         if( mDone < 3 ) then -- only update unitl picked 
@@ -1124,36 +1160,21 @@ RobPlace = function(TrackPart,detachPart,approachHeight,blend,nulling,dwTime,att
     buffer2 = readBuffer('buffer2')
     buffer3 = readBuffer('buffer3')
     buffer4 = readBuffer('buffer4')
-    buffer5 = readBuffer('buffer5')
-    buffer6 = readBuffer('buffer6')
-    buffer7 = readBuffer('buffer7')
 
     buffer1:push(move1Data)
     buffer2:push(move2Data)
     buffer3:push(move3Data)
     buffer4:push(move4Data)
 
-    buffer5:push(supplyData)
-    buffer6:push(vacuumData)
-    buffer7:push(maxVelData)
-
     writeBuffer(buffer1,'buffer1')
     writeBuffer(buffer2,'buffer2')
     writeBuffer(buffer3,'buffer3')
     writeBuffer(buffer4,'buffer4')
 
-    writeBuffer(buffer5,'buffer5')
-    writeBuffer(buffer6,'buffer6')
-    writeBuffer(buffer7,'buffer7')
-
     move1Data = {}
     move2Data = {}
     move3Data = {}
     move4Data = {}
-
-    supplyData = {}
-    vacuumData = {}
-    maxVelData = {}
 
     if partCounter%4 == 0 then
         assemblyCounter = assemblyCounter + 1

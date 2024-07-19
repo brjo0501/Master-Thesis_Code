@@ -31,7 +31,7 @@ end
 -- Removes and returns the oldest element from the buffer
 function RingBuffer:pop()
     if self:isEmpty() then
-        error("Buffer is empty")
+        local value = {0}
     end
     local value = self.buffer[self.head]
     self.buffer[self.head] = nil

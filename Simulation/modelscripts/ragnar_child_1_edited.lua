@@ -40,6 +40,9 @@ function sysCall_init()
     vacuumData = {}
     maxVelData = {}
 
+    enableProduct = false
+
+    sim.writeCustomDataBlock(model,'productTrigger',sim.packTable({trigger = false}))
 
     assemblyCounter = 1
 end
@@ -112,7 +115,40 @@ function sysCall_actuation()
     end
 
     sim.writeCustomDataBlock(model, 'customData',sim.packTable(data))
-    --print(data)
+
+    trigger = sim.unpackTable(sim.readCustomDataBlock(model,'productTrigger'))
+
+    if enableProduct then
+        table.insert(supplyData,robData['gripperSupply'])
+        table.insert(vacuumData,robData['gripperVacuum'])
+        table.insert(maxVelData,robData['maxVel'])
+    end
+    
+    if trigger['trigger'] and vacuumData[1] ~= nil  then
+        enableProduct = true
+        buffer5 = readBuffer('buffer5')
+        buffer6 = readBuffer('buffer6')
+        buffer7 = readBuffer('buffer7')
+    
+        buffer5:push(supplyData)
+        buffer6:push(vacuumData)
+        buffer7:push(maxVelData)
+
+        print(buffer6)
+    
+        writeBuffer(buffer5,'buffer5')
+        writeBuffer(buffer6,'buffer6')
+        writeBuffer(buffer7,'buffer7')
+
+        supplyData = {}
+        vacuumData = {}
+        maxVelData = {}
+
+        sim.writeCustomDataBlock(model,'productTrigger',sim.packTable({trigger = false}))
+    elseif trigger['trigger'] and vacuumData[1] == nil then
+        enableProduct = true
+        sim.writeCustomDataBlock(model,'productTrigger',sim.packTable({trigger = false}))
+    end
 end
 
 function ragnar_startPickTime()
@@ -965,10 +1001,6 @@ RobPick = function(partData,attachPart,theStackingShift,approachHeight,blend,nul
         table.insert(move3Data,sim.getJointVelocity(joint3))
         table.insert(move4Data,sim.getJointVelocity(joint4))
 
-        table.insert(supplyData,robData['gripperSupply'])
-        table.insert(vacuumData,robData['gripperVacuum']) 
-        table.insert(maxVelData,robData['maxVel'])
-
         local dt=sim.getSimulationTimeStep()
         partPos = sim.getObjectPosition(dummyHandleToFollow,model)
         partOr =  sim.getObjectOrientation(dummyHandleToFollow,model)
@@ -1042,10 +1074,6 @@ RobPlace = function(TrackPart,detachPart,approachHeight,blend,nulling,dwTime,att
         table.insert(move2Data,sim.getJointVelocity(joint2))
         table.insert(move3Data,sim.getJointVelocity(joint3))
         table.insert(move4Data,sim.getJointVelocity(joint4))
-
-        table.insert(supplyData,robData['gripperSupply'])
-        table.insert(vacuumData,robData['gripperVacuum'])
-        table.insert(maxVelData,robData['maxVel'])
 
         local dt=sim.getSimulationTimeStep()
         if( mDone < 3 ) then -- only update unitl picked 
@@ -1127,36 +1155,21 @@ RobPlace = function(TrackPart,detachPart,approachHeight,blend,nulling,dwTime,att
     buffer2 = readBuffer('buffer2')
     buffer3 = readBuffer('buffer3')
     buffer4 = readBuffer('buffer4')
-    buffer5 = readBuffer('buffer5')
-    buffer6 = readBuffer('buffer6')
-    buffer7 = readBuffer('buffer7')
 
     buffer1:push(move1Data)
     buffer2:push(move2Data)
     buffer3:push(move3Data)
     buffer4:push(move4Data)
 
-    buffer5:push(supplyData)
-    buffer6:push(vacuumData)
-    buffer7:push(maxVelData)
-
     writeBuffer(buffer1,'buffer1')
     writeBuffer(buffer2,'buffer2')
     writeBuffer(buffer3,'buffer3')
     writeBuffer(buffer4,'buffer4')
 
-    writeBuffer(buffer5,'buffer5')
-    writeBuffer(buffer6,'buffer6')
-    writeBuffer(buffer7,'buffer7')
-
     move1Data = {}
     move2Data = {}
     move3Data = {}
     move4Data = {}
-
-    supplyData = {}
-    vacuumData = {}
-    maxVelData = {}
 
     sim.writeCustomDataBlock(events,'customData',sim.packTable(eventList))
     assemblyCounter = assemblyCounter + 1
