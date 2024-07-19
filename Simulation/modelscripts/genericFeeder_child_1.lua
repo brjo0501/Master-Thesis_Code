@@ -382,8 +382,9 @@ function sysCall_init()
     sensorHandle=simBWF.getReferencedObjectHandle(model,1)
     conveyorHandle=simBWF.getReferencedObjectHandle(model,2)
     conveyorTriggerDist=data['conveyorDist']
-    mode=0 -- 0=frequency, 1=sensor, 2=user, 3=conveyor, 4=multi-feeder
+    mode=0 -- 0=frequency, 1=sensor, 2=user, 3=conveyor, 4=multi-feeder    
     local tmp=(data['bitCoded']&4+8+16)
+    
     if tmp==4 then mode=1 end
     if tmp==8 then mode=2 end
     if tmp==12 then mode=3 end

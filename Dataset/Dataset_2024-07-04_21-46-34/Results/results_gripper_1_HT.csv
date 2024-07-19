@@ -1,0 +1,4 @@
+score
+"{'root_cause': 'rob_1_supply', 'score': 570.334268494388, 'paths': ['rob_1_supply', 'rob_1_vacuum', 'EoL_2_X', 'score']}"
+"{'root_cause': 'rob_1_vacuum', 'score': 271.6429594811125, 'paths': ['rob_1_vacuum', 'EoL_2_X', 'score']}"
+"{'root_cause': 'rob_1_maxVel', 'score': 180.44825559856125, 'paths': ['rob_1_maxVel', 'rob_1_1', 'EoL_2_X', 'score']}"

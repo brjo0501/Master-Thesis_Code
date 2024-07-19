@@ -1,15 +1,19 @@
 -- Basic Lua code for testing funtions
 local x = {value=0}
 local y = {value=0}
+local z = {}
 for i = 1, 400, 1 do
     x[i] = 2*math.log(1/math.random())^.5*math.cos(2*math.pi*math.random())*2.5+50
     y[i] = 2*math.log(1/math.random())^1*math.cos(2*math.pi*math.random())*0.5+50
+    z[i] = i%4
 end
 
-print(table.unpack(x))
+print(table.unpack(z))
 
-print(math.max(table.unpack(x)),math.min(table.unpack(x)))
-print(math.max(table.unpack(y)),math.min(table.unpack(y)))
+--print(math.max(table.unpack(x)),math.min(table.unpack(x)))
+--print(math.max(table.unpack(y)),math.min(table.unpack(y)))
+
+
 
 -- -----------------------------------------------------------
 
@@ -285,3 +289,19 @@ print(math.max(table.unpack(y)),math.min(table.unpack(y)))
 -- -- camData['wrongCount'] = wrongCount
 -- -- camData['tray1'] = tray1
 -- -- camData['tray2'] = tray2
+
+-- -- User feeder algorithm. For instance:
+
+-- local simulationTime=simGetSimulationTime()
+-- local dropFrequency=2 -- in Hz
+
+-- if not lastDropTime then
+--     lastDropTime=simulationTime-9999
+-- end
+
+-- if simulationTime-lastDropTime>(1/dropFrequency) then
+--     lastDropTime=t
+--     return true -- drop a part
+-- end
+
+-- return false -- do not drop a part

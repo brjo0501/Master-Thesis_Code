@@ -184,8 +184,8 @@ function getAllVisiblePartsInWindow()
     for i=1,#l,1 do
         local isPart,isInstanciated,data=simBWF.isObjectPartAndInstanciated(l[i])
         if isInstanciated then
-            --print(data)
-            local p=sim.getObjectPosition(l[i],model)
+            
+            local p=sim.getObjectPosition(l[i],model) -- relative position of all parts to the detection window
             if (math.abs(p[1])<width*0.5) and (math.abs(p[2])<length*0.5) and (p[3]>0) and (p[3]<height) then
                 retL2[#retL2+1]=l[i]
                 sim.setObjectPosition(sensor1,model,{p[1],p[2],op[3]})
@@ -342,9 +342,8 @@ function sysCall_sensing()
   camData = sim.unpackTable(sim.readCustomDataBlock(cam,'customData'))
 
   idPart = camData['id']
-  --camDetect = camData['detect']
+  camDetect = camData['detect']
   camEnabled = camData['enabledCamera']
-
 
   --print(camDetect)
   
@@ -355,7 +354,7 @@ function sysCall_sensing()
   local detect = false
 
   if (enabledDetection['enabledDetection'] == true) then
-    if  camEnabled then --camDetect  or not
+    if  camDetect or not camEnabled then 
         detect = true
     end
   end

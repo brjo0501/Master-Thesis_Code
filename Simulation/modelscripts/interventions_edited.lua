@@ -144,6 +144,42 @@ function action40(ui,id,newVal)
     showDlg()
 end
 
+function interSize1()
+
+    local feederData = sim.readCustomDataBlock(feeder1, simBWF.modelTags.PARTFEEDER)
+
+    local newTable = sim.unpackTable(feederData)
+
+    newTable['nonIsoSizeScalingDistribution'] = [[{1,{(2*math.log(1/math.random())^.5*math.cos(2*math.pi*math.random())*0.5+50)*40/(50*50),(2*math.log(1/math.random())^.5*math.sin(2*math.pi*math.random())*0.5+50)*40/(50*50),1}}]]
+    newTable['weightDistribution'] = [[{1,(2*math.log(1/math.random())^.5*math.cos(2*math.pi*math.random())*0.001+0.10)*(40/50)}]]
+
+    sim.writeCustomDataBlock(feeder1,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable))
+    sim.writeCustomDataBlock(feeder4,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable))
+    sim.writeCustomDataBlock(feeder5,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable))
+    sim.writeCustomDataBlock(feeder6,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable))
+
+    print('Intervention: size 1 has been modified')
+
+end
+
+function resetSize1()
+
+    local feederData = sim.readCustomDataBlock(feeder1, simBWF.modelTags.PARTFEEDER)
+
+    local newTable = sim.unpackTable(feederData)
+
+    newTable['nonIsoSizeScalingDistribution'] = [[{1,{(2*math.log(1/math.random())^.5*math.cos(2*math.pi*math.random())*0.5+50)/50,(2*math.log(1/math.random())^.5*math.sin(2*math.pi*math.random())*0.5+50)/50,1}}]]
+    newTable['weightDistribution'] = [[{1,(2*math.log(1/math.random())^.5*math.cos(2*math.pi*math.random())*0.001+0.10)}]]
+
+    sim.writeCustomDataBlock(feeder1,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable))
+    sim.writeCustomDataBlock(feeder4,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable))
+    sim.writeCustomDataBlock(feeder5,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable))
+    sim.writeCustomDataBlock(feeder6,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable))
+    print('Intervention: size 1 has been reset')
+
+end
+
+
 function action50(ui,id,newVal)
     local feederData = sim.readCustomDataBlock(feeder2, simBWF.modelTags.PARTFEEDER)
 
@@ -182,6 +218,96 @@ function action60(ui,id,newVal)
 
 end
 
+
+function interFeeder3()
+
+
+    local feederData = sim.readCustomDataBlock(feeder3, simBWF.modelTags.PARTFEEDER)
+
+    local newTable = sim.unpackTable(feederData)
+
+    newTable['frequency'] = 0
+
+    sim.writeCustomDataBlock(feeder3,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable))
+    print('Intervention: feeder 3 has been disabled')
+end
+
+function resetFeeder3()
+
+    local feederData = sim.readCustomDataBlock(feeder3, simBWF.modelTags.PARTFEEDER)
+
+    local newTable = sim.unpackTable(feederData)
+    local speed = 75
+    newTable['frequency'] = 0.125
+    sim.writeCustomDataBlock(feeder3,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable))
+    print('Intervention: feeder 3 has been reset')
+
+end
+
+function interFeederAll()
+
+    local feederData1=sim.readCustomDataBlock(feeder1,simBWF.modelTags.PARTFEEDER)
+    local feederData2=sim.readCustomDataBlock(feeder2,simBWF.modelTags.PARTFEEDER)
+    local feederData3=sim.readCustomDataBlock(feeder3,simBWF.modelTags.PARTFEEDER)
+    local feederData4=sim.readCustomDataBlock(feeder4,simBWF.modelTags.PARTFEEDER)
+    local feederData5=sim.readCustomDataBlock(feeder5,simBWF.modelTags.PARTFEEDER)
+    local feederData6=sim.readCustomDataBlock(feeder6,simBWF.modelTags.PARTFEEDER)
+
+    local newTable1 = sim.unpackTable(feederData1)
+    local newTable2 = sim.unpackTable(feederData2)
+    local newTable3 = sim.unpackTable(feederData3)
+    local newTable4 = sim.unpackTable(feederData4)
+    local newTable5 = sim.unpackTable(feederData5)
+    local newTable6 = sim.unpackTable(feederData6)
+
+    newTable1['bitCoded'] = 10
+    newTable2['bitCoded'] = 10
+    newTable3['bitCoded'] = 10
+    newTable4['bitCoded'] = 10
+    newTable5['bitCoded'] = 10
+    newTable6['bitCoded'] = 10
+
+    sim.writeCustomDataBlock(feeder1,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable1))
+    sim.writeCustomDataBlock(feeder2,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable2))
+    sim.writeCustomDataBlock(feeder3,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable3))
+    sim.writeCustomDataBlock(feeder4,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable4))
+    sim.writeCustomDataBlock(feeder5,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable5))
+    sim.writeCustomDataBlock(feeder6,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable6))
+
+end
+
+function resetFeederAll()
+
+    local feederData1=sim.readCustomDataBlock(feeder1,simBWF.modelTags.PARTFEEDER)
+    local feederData2=sim.readCustomDataBlock(feeder2,simBWF.modelTags.PARTFEEDER)
+    local feederData3=sim.readCustomDataBlock(feeder3,simBWF.modelTags.PARTFEEDER)
+    local feederData4=sim.readCustomDataBlock(feeder4,simBWF.modelTags.PARTFEEDER)
+    local feederData5=sim.readCustomDataBlock(feeder5,simBWF.modelTags.PARTFEEDER)
+    local feederData6=sim.readCustomDataBlock(feeder6,simBWF.modelTags.PARTFEEDER)
+
+    local newTable1 = sim.unpackTable(feederData1)
+    local newTable2 = sim.unpackTable(feederData2)
+    local newTable3 = sim.unpackTable(feederData3)
+    local newTable4 = sim.unpackTable(feederData4)
+    local newTable5 = sim.unpackTable(feederData5)
+    local newTable6 = sim.unpackTable(feederData6)
+
+    newTable1['bitCoded'] = 2
+    newTable2['bitCoded'] = 2
+    newTable3['bitCoded'] = 2
+    newTable4['bitCoded'] = 2
+    newTable5['bitCoded'] = 2
+    newTable6['bitCoded'] = 2
+
+    sim.writeCustomDataBlock(feeder1,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable1))
+    sim.writeCustomDataBlock(feeder2,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable2))
+    sim.writeCustomDataBlock(feeder3,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable3))
+    sim.writeCustomDataBlock(feeder4,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable4))
+    sim.writeCustomDataBlock(feeder5,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable5))
+    sim.writeCustomDataBlock(feeder6,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable6))
+
+end
+
 function action70(ui,id)
 
     local robot = sim.readCustomDataBlock(ragnar1,'customData')
@@ -190,25 +316,12 @@ function action70(ui,id)
 
     local power = tonumber(simUI.getSliderValue(ui,id))
 
-    newTable['gripperPower'] = power
+    newTable['gripperSupply'] = power
     sim.writeCustomDataBlock(ragnar1,'customData',sim.packTable(newTable))
     simUI.setLabelText(ui,72,tostring(simUI.getSliderValue(ui,id)))
     showDlg()
 end
 
-function action90(ui,id)
-
-    local robot = sim.readCustomDataBlock(ragnar1,'customData')
-
-    local newTable = sim.unpackTable(robot)
-
-    local power = tonumber(simUI.getSliderValue(ui,id))
-
-    newTable['gripperPower'] = power
-    sim.writeCustomDataBlock(ragnar1,'customData',sim.packTable(newTable))
-    simUI.setLabelText(ui,72,tostring(simUI.getSliderValue(ui,id)))
-    showDlg()
-end
 
 function action90(ui,id)
 
@@ -224,15 +337,46 @@ function action90(ui,id)
     showDlg()
 end
 
+function interVeloRob1()
+
+    local robot = sim.readCustomDataBlock(ragnar1,simBWF.modelTags.RAGNAR)
+    local robot_custom = sim.readCustomDataBlock(ragnar1,'customData')
+
+    local newTable1 = sim.unpackTable(robot)
+    local newTable2 = sim.unpackTable(robot_custom)
+
+    newTable1['maxVel'] = 0.7
+    newTable2['maxVel'] = 0.7
+    sim.writeCustomDataBlock(ragnar1,simBWF.modelTags.RAGNAR,sim.packTable(newTable1))
+    sim.writeCustomDataBlock(ragnar1,'customData',sim.packTable(newTable2))
+    print('Intervention: robot 1 speed has been modified')
+
+end
+
+function resetVeloRob1()
+    local robot = sim.readCustomDataBlock(ragnar1,simBWF.modelTags.RAGNAR)
+    local robot_custom = sim.readCustomDataBlock(ragnar1,'customData')
+
+    local newTable1 = sim.unpackTable(robot)
+    local newTable2 = sim.unpackTable(robot_custom)
+
+    newTable1['maxVel'] = 2
+    newTable2['maxVel'] = 2
+    sim.writeCustomDataBlock(ragnar1,simBWF.modelTags.RAGNAR,sim.packTable(newTable1))
+    sim.writeCustomDataBlock(ragnar1,'customData',sim.packTable(newTable2))
+    print('Intervention: robot 1 speed has been reset')
+
+end
+
 function interGripper1()
 
     local robot = sim.readCustomDataBlock(ragnar1,'customData')
 
     local newTable = sim.unpackTable(robot)
 
-    local power = 0
+    local power = 30
 
-    newTable['gripperPower'] = power
+    newTable['gripperSupply'] = power
     sim.writeCustomDataBlock(ragnar1,'customData',sim.packTable(newTable))
     print('Intervention: gripper 1 has been disabled')
 end
@@ -245,7 +389,7 @@ function resetGripper1()
 
     local power = 100
 
-    newTable['gripperPower'] = power
+    newTable['gripperSupply'] = power
     sim.writeCustomDataBlock(ragnar1,'customData',sim.packTable(newTable))
     print('Intervention: gripper 1 has been reset')
 end
@@ -258,7 +402,7 @@ function action80(ui,id)
 
     local power = tonumber(simUI.getSliderValue(ui,id))
 
-    newTable['gripperPower'] = power
+    newTable['gripperSupply'] = power
     sim.writeCustomDataBlock(ragnar2,'customData',sim.packTable(newTable))
     simUI.setLabelText(ui,82,tostring(simUI.getSliderValue(ui,id)))
     showDlg()
@@ -278,14 +422,45 @@ function action100(ui,id)
     showDlg()
 end
 
+function interVeloRob2()
+
+    local robot = sim.readCustomDataBlock(ragnar2,simBWF.modelTags.RAGNAR)
+    local robot_custom = sim.readCustomDataBlock(ragnar2,'customData')
+
+    local newTable1 = sim.unpackTable(robot)
+    local newTable2 = sim.unpackTable(robot_custom)
+
+    newTable1['maxVel'] = 0.7
+    newTable2['maxVel'] = 0.7
+    sim.writeCustomDataBlock(ragnar2,simBWF.modelTags.RAGNAR,sim.packTable(newTable1))
+    sim.writeCustomDataBlock(ragnar2,'customData',sim.packTable(newTable2))
+    print('Intervention: robot 2 speed has been modified')
+
+end
+
+function resetVeloRob2()
+    local robot = sim.readCustomDataBlock(ragnar2,simBWF.modelTags.RAGNAR)
+    local robot_custom = sim.readCustomDataBlock(ragnar2,'customData')
+
+    local newTable1 = sim.unpackTable(robot)
+    local newTable2 = sim.unpackTable(robot_custom)
+
+    newTable1['maxVel'] = 2
+    newTable2['maxVel'] = 2
+    sim.writeCustomDataBlock(ragnar2,simBWF.modelTags.RAGNAR,sim.packTable(newTable1))
+    sim.writeCustomDataBlock(ragnar2,'customData',sim.packTable(newTable2))
+    print('Intervention: robot 2 speed has been reset')
+
+end
+
 function interGripper2()
 
     local robot = sim.readCustomDataBlock(ragnar2,'customData')
 
     local newTable = sim.unpackTable(robot)
 
-    local power = 0
-    newTable['gripperPower'] = power
+    local power = 30
+    newTable['gripperSupply'] = power
     sim.writeCustomDataBlock(ragnar2,'customData',sim.packTable(newTable))
     print('Intervention: gripper 2 has been disabled')
 end
@@ -298,7 +473,7 @@ function resetGripper2()
 
     local power = 100
 
-    newTable['gripperPower'] = power
+    newTable['gripperSupply'] = power
     sim.writeCustomDataBlock(ragnar2,'customData',sim.packTable(newTable))
     print('Intervention: gripper 2 has been reset')
 end
@@ -454,12 +629,12 @@ function resetConveyor1()
 
     local newTable2 = sim.unpackTable(conveyor)
 
-    local speed = 80
+    local speed = 75
 
-    newTable1['frequency'] = 0.2
-    newTable4['frequency'] = 0.2
-    newTable5['frequency'] = 0.2
-    newTable6['frequency'] = 0.2
+    newTable1['frequency'] = 0.125
+    newTable4['frequency'] = 0.125
+    newTable5['frequency'] = 0.125
+    newTable6['frequency'] = 0.125
 
     newTable2['speed'] = speed
 
@@ -500,8 +675,8 @@ function resetConveyor2()
 
     local newTable2 = sim.unpackTable(conveyor)
 
-    local speed = 80
-    newTable1['frequency'] = 0.2
+    local speed = 75
+    newTable1['frequency'] = 0.125
     newTable2['speed'] = speed
     sim.writeCustomDataBlock(feeder2,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable1))
     sim.writeCustomDataBlock(conveyor2,'customData',sim.packTable(newTable2))
@@ -537,13 +712,17 @@ function resetConveyor3()
 
     local newTable2 = sim.unpackTable(conveyor)
 
-    local speed = 80
-    newTable1['frequency'] = 0.2
+    local speed = 75
+    newTable1['frequency'] = 0.125
     newTable2['speed'] = speed
     sim.writeCustomDataBlock(feeder3,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable1))
     sim.writeCustomDataBlock(conveyor3,'customData',sim.packTable(newTable2))
     print('Intervention: conveyor 3 has been reset')
 
+end
+
+function normal()
+    sysCall_afterSimulation()
 end
 
 function sysCall_afterSimulation()
@@ -555,7 +734,14 @@ function sysCall_afterSimulation()
     resetConveyor1()
     resetConveyor2()
     resetConveyor3()
+    resetSize1()
+    resetFeeder3()
+    resetVeloRob2()
+    resetVeloRob1()
+    resetFeederAll()
 end
+
+
 
 function sysCall_init()
     model=sim.getObject('.')
@@ -605,11 +791,11 @@ function showDlg()
 
     local robotCustomData1 = sim.unpackTable(sim.readCustomDataBlock(ragnar1, 'customData'))
 
-    local gripperPower1 = tostring(math.floor(robotCustomData1['gripperPower']))
+    local gripperPower1 = tostring(math.floor(robotCustomData1['gripperSupply']))
 
     local robotCustomData2 = sim.unpackTable(sim.readCustomDataBlock(ragnar2, 'customData'))
 
-    local gripperPower2 = tostring(math.floor(robotCustomData2['gripperPower']))
+    local gripperPower2 = tostring(math.floor(robotCustomData2['gripperSupply']))
 
     local robotData1= sim.unpackTable(sim.readCustomDataBlock(ragnar1, simBWF.modelTags.RAGNAR))
 
@@ -642,15 +828,15 @@ function showDlg()
 
         xml = xml..'<label text="Conveyor Speed 1 (mm/s):" style="* {min-width: 300px; min-height: 30px;}" id ="11"/>'
         xml = xml..'<label text="'..speed1..'"style="* {min-width: 300px; min-height: 30px;}" id ="12"/>'
-        xml = xml..'<hslider value="'..speed1..'" minimum="0" maximum="80" on-change="action10" id="13" style="* {min-width: 300px;}" />'
+        xml = xml..'<hslider value="'..speed1..'" minimum="0" maximum="75" on-change="action10" id="13" style="* {min-width: 300px;}" />'
 
         xml = xml..'<label text="Conveyor Speed 2 (mm/s):" style="* {min-width: 300px; min-height: 30px;}" id ="21"/>'
         xml = xml..'<label text="'..speed2..'"style="* {min-width: 300px; min-height: 30px;}" id ="22"/>'
-        xml = xml..'<hslider value="'..speed2..'" minimum="0" maximum="80" on-change="action20" id="23" style="* {min-width: 300px;}" />'
+        xml = xml..'<hslider value="'..speed2..'" minimum="0" maximum="75" on-change="action20" id="23" style="* {min-width: 300px;}" />'
 
         xml = xml..'<label text="Conveyor Speed 3 (mm/s):" style="* {min-width: 300px; min-height: 30px;}" id ="31"/>'
         xml = xml..'<label text="'..speed3..'"style="* {min-width: 300px; min-height: 30px;}" id ="32"/>'
-        xml = xml..'<hslider value="'..speed3..'" minimum="0" maximum="80" on-change="action30" id="33" style="* {min-width: 300px;}" />'
+        xml = xml..'<hslider value="'..speed3..'" minimum="0" maximum="75" on-change="action30" id="33" style="* {min-width: 300px;}" />'
 
         xml = xml..'<label text="Gripper Power 1 (%):" style="* {min-width: 300px; min-height: 30px;}" id ="71"/>'
         xml = xml..'<label text="'..gripperPower1..'"style="* {min-width: 300px; min-height: 30px;}" id ="72"/>'
