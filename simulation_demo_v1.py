@@ -86,6 +86,11 @@ class MainLayout(WhiteBoxLayout):
 
         self.anomaly_detected = False
 
+        self.rca_activated = False
+
+        self.normal_data = pd.DataFrame()
+        self.abnormal_data = pd.DataFrame()
+
         client = RemoteAPIClient()
 
         self.sim = client.require('sim')
@@ -105,7 +110,7 @@ class MainLayout(WhiteBoxLayout):
         self.rob_1 = self.sim.getObject('/Ragnar[0]')
         self.rob_2 = self.sim.getObject('/Ragnar[1]')
 
-        self.objects = [self.camera_1,self.camera_2,self.camera_3,self.rob_1,self.rob_2,self.camera_EoL]
+        self.objects = [self.camera_1,self.camera_2,self.camera_3,self.conveyor1,self.conveyor2,self.conveyor3,self.rob_1,self.rob_2,self.camera_EoL]
 
         self.events = self.sim.getObject('/Events')
 
@@ -154,7 +159,7 @@ class MainLayout(WhiteBoxLayout):
         # Select Box (Spinner)
         self.spinner1 = Spinner(
             text='Select Process Step',
-            values=('Robot 1', 'Robot 2', 'Camera 1', 'Camera 2', 'Camera 3', 'Camera EoL'),
+            values=('Robot 1', 'Robot 2', 'Camera 1', 'Camera 2', 'Camera 3', 'Camera EoL','Conveyor 1','Conveyor 2','Conveyor 3'),
             size_hint=(None, None),
             size=(400, 60),
             background_color=(0.5, 0.5, 0.5, 1)
@@ -331,24 +336,26 @@ class MainLayout(WhiteBoxLayout):
         self.networkx_graph_display.draw()
     
     def stop_sim(self, instance):
+        self.sim.stopSimulation()
         self.clock_data.cancel()
         self.clock_plot.cancel()
-        self.sim.stopSimulation()
         # Clear the figures when stopping the simulation
         for canvas in self.graphs:
             ax = canvas.figure.gca()  # Get the current axes
             ax.cla()  # Clear the current axes
             canvas.draw()
         
-        self.t_data = pd.DataFrame()  # Time array
-        self.y_data = pd.DataFrame()  # Data array
+        self.t_data = pd.DataFrame()
+        self.data_out = pd.DataFrame()
+        self.graphs = []
+        self.scores = []
         
         #self.sim.setBoolParam(self.sim.boolparam_display_enabled, True)
 
     def pause_sim(self, instance):
+        self.sim.pauseSimulation()
         self.clock_data.cancel()
         self.clock_plot.cancel()
-        self.sim.pauseSimulation()
                 
     def start_sim(self, instance):
         #self.sim.setStepping(True)
@@ -387,10 +394,34 @@ class MainLayout(WhiteBoxLayout):
             total_count = len(EoL_nodes)
             score = (non_zero_count / total_count) * 100
             self.scores.append(score)
+        
+        if self.rca_activated :
+            last_time = self.t_data['time'].iloc[-1]
+            time_threshold = last_time - 35
+
+            abnormal_index= self.t_data[self.t_data['time'] <= time_threshold].index[-1]
+
+            warm_up_index = self.t_data[self.t_data['time'] <= 35].index[-1]
+
+            if warm_up_index < abnormal_index:
+                self.data_out['score'] = pd.DataFrame(self.scores)
+                self.abnormal_data = self.data_out.loc[abnormal_index:]
+                self.normal_data = self.data_out.loc[warm_up_index:abnormal_index]
+
+                self.sim.pauseSimulation()
+                self.clock_data.cancel()
+                self.clock_plot.cancel()
+
+                self.run_HT(abnormal_df = self.abnormal_data,
+                          normal_df = self.normal_data,
+                           key_nodes = ['score'],
+                           colors = self.colors)
+
 
         self.data_out = pd.concat([self.data_out, all_data_row],ignore_index=True)
+        #print(self.data_out)
         self.t_data = pd.concat([self.t_data,pd.DataFrame({'time': [self.sim.getSimulationTime()]})], ignore_index=True)
-        print(self.sim.getSimulationTime())
+        #print(self.sim.getSimulationTime())
         #self.sim.step()
 
     def on_spinner_select_1(self, spinner, text):
@@ -419,6 +450,16 @@ class MainLayout(WhiteBoxLayout):
         elif text == 'Camera EoL':
             self.graph_count = 12
             self.object = self.camera_EoL
+        elif text == 'Conveyor 1':
+            self.graph_count = 1
+            self.object = self.conveyor1
+        elif text == 'Conveyor 2':
+            self.graph_count = 1
+            self.object = self.conveyor2
+        elif text == 'Conveyor 3':
+            self.graph_count = 1
+            self.object = self.conveyor3
+
 
         if self.graph_count > num_graphs:
             for i in range(self.graph_count-num_graphs):
@@ -513,6 +554,7 @@ class MainLayout(WhiteBoxLayout):
         return data.replace(np.nan, 0).replace({True: 1, False: 0})
 
     def update_plots(self, dt):
+        
         if self.sim.getSimulationTime() > 0:
             self.time_elapsed += self.update_interval
             i = 0
@@ -521,23 +563,32 @@ class MainLayout(WhiteBoxLayout):
             fig_score = self.canvas_score.figure
             ax_score = fig_score.axes[0]
 
+            anomaly = []
+
             if self.sim.getSimulationTime() > 100: 
                 t_end = self.t_data['time'].iloc[-1]
                 t_start = t_end-100
                 ax_score.set_xlim(t_start,t_end)
                 ax_score.set_ylim(0,100)
 
-            anomaly = []
-
             if self.sim.getSimulationTime() > 35 and not self.anomaly_detected:
-                anomaly = []
                 if self.scores[-1] < 100:
+                    t_end = self.t_data['time'].iloc[-1]
                     anomaly.append((t_end-35, t_end))
                     self.anomaly_detected = True
-                    self.label.text = f'Anomaly Detected: {t_end} - {self.anomaly_detected}'
+                    self.rca_activated = True
+                    self.label.text = f'Anomaly Detected:{self.anomaly_detected}'
 
                 for start, end  in anomaly:
                     ax_score.axvspan(start, end, color = 'orange', alpha=0.5)
+
+                for canvas in self.graphs:
+                    fig = canvas.figure
+                    column = data.columns[i]
+                    ax = fig.axes[0]
+                    for start, end  in anomaly:
+                        ax.axvspan(start, end, color = 'orange', alpha=0.5)
+
 
             ax_score.plot(self.t_data['time'], self.scores)
             self.canvas_score.draw()
@@ -547,9 +598,9 @@ class MainLayout(WhiteBoxLayout):
                 column = data.columns[i]
                 ax = fig.axes[0]  # Assuming only one subplot per figure
 
-                if self.sim.getSimulationTime() > 10: 
+                if self.sim.getSimulationTime() > 50: 
                     t_end = self.t_data['time'].iloc[-1]
-                    t_start = t_end-10
+                    t_start = t_end-50
                     ax.set_xlim(t_start,t_end)
 
                 # Update plot with new data
@@ -562,10 +613,6 @@ class MainLayout(WhiteBoxLayout):
                 ax.set_title(f'Data:{column}')
                 ax.set_xlabel('Time')
                 ax.set_ylabel('Value')
-
-                if self.anomaly_detected :
-                    ax.axvspan(start, end, color = 'orange', alpha=0.5)
-
                 # Redraw canvas to reflect updated plot
                 canvas.draw()
                 i +=1
@@ -574,12 +621,98 @@ class MainLayout(WhiteBoxLayout):
     def run_HT(self,
             normal_df: pd.DataFrame,
             abnormal_df: pd.DataFrame,
-            G: nx.DiGraph,
-            nodes: list,
-            edges:dict,
             key_nodes: list,
-            colors: dict,
-            pos: dict):
+            colors: dict):
+
+        G = nx.DiGraph()
+        nodes = [
+        'cam_1_X', 'cam_2_X', 'cam_3_X',
+        'cam_1_Y', 'cam_2_Y', 'cam_3_Y',
+        'EoL_1_X', 'EoL_2_X', 'EoL_3_X', 'EoL_4_X', 'EoL_5_X', 'EoL_6_X',
+        'EoL_1_Y', 'EoL_2_Y', 'EoL_3_Y', 'EoL_4_Y', 'EoL_5_Y', 'EoL_6_Y',
+        'rob_1_1', 'rob_1_2', 'rob_1_3', 'rob_1_4', 'rob_1_maxVel',
+        'rob_2_1', 'rob_2_2', 'rob_2_3', 'rob_2_4', 'rob_2_maxVel',
+        'rob_1_supply', 'rob_2_supply',
+        'rob_1_vacuum', 'rob_2_vacuum',
+        'con_1','con_2','con_3',
+        'score']
+
+        edges = [   
+        ('cam_1_X', 'rob_2_1'), ('cam_1_Y', 'rob_2_1'),
+        ('cam_1_X', 'rob_2_2'), ('cam_1_Y', 'rob_2_2'),
+        ('cam_1_X', 'rob_2_3'), ('cam_1_Y', 'rob_2_3'),
+        ('cam_1_X', 'rob_2_4'), ('cam_1_Y', 'rob_2_4'),
+        
+        ('cam_2_X', 'rob_1_1'), ('cam_2_Y', 'rob_1_1'),
+        ('cam_2_X', 'rob_1_2'), ('cam_2_Y', 'rob_1_2'),
+        ('cam_2_X', 'rob_1_3'), ('cam_2_Y', 'rob_1_3'),
+        ('cam_2_X', 'rob_1_4'), ('cam_2_Y', 'rob_1_4'),
+        
+        ('cam_3_X', 'rob_1_1'), ('cam_3_Y', 'rob_1_1'),
+        ('cam_3_X', 'rob_1_2'), ('cam_3_Y', 'rob_1_2'),
+        ('cam_3_X', 'rob_1_3'), ('cam_3_Y', 'rob_1_3'),
+        ('cam_3_X', 'rob_1_4'), ('cam_3_Y', 'rob_1_4'),
+        
+        ('rob_1_maxVel', 'rob_1_1'), ('rob_1_maxVel', 'rob_1_2'),
+        ('rob_1_maxVel', 'rob_1_3'), ('rob_1_maxVel', 'rob_1_4'),
+        
+        ('rob_2_maxVel', 'rob_2_1'), ('rob_2_maxVel', 'rob_2_2'),
+        ('rob_2_maxVel', 'rob_2_3'), ('rob_2_maxVel', 'rob_2_4'),
+        
+        ('con_2', 'rob_1_1'), ('con_2', 'rob_1_2'), ('con_2', 'rob_1_3'), ('con_2', 'rob_1_4'),
+        ('con_3', 'rob_1_1'), ('con_3', 'rob_1_2'), ('con_3', 'rob_1_3'), ('con_3', 'rob_1_4'),
+
+        ('con_2', 'rob_2_1'), ('con_2', 'rob_2_2'), ('con_2', 'rob_2_3'), ('con_2', 'rob_2_4'),
+        ('con_1', 'rob_2_1'), ('con_1', 'rob_2_2'), ('con_1', 'rob_2_3'), ('con_1', 'rob_2_4'),
+
+        ('con_2', 'EoL_1_X'), ('con_2', 'EoL_1_Y'),
+        
+        ('rob_1_1', 'rob_2_1'), ('rob_1_1', 'rob_2_2'), ('rob_1_1', 'rob_2_3'), ('rob_1_1', 'rob_2_4'),
+        ('rob_1_2', 'rob_2_1'), ('rob_1_2', 'rob_2_2'), ('rob_1_2', 'rob_2_3'), ('rob_1_2', 'rob_2_4'),
+        ('rob_1_3', 'rob_2_1'), ('rob_1_3', 'rob_2_2'), ('rob_1_3', 'rob_2_3'), ('rob_1_3', 'rob_2_4'),
+        ('rob_1_4', 'rob_2_1'), ('rob_1_4', 'rob_2_2'), ('rob_1_4', 'rob_2_3'), ('rob_1_4', 'rob_2_4'),
+
+        ('rob_1_supply', 'rob_1_vacuum'), 
+        ('rob_2_supply', 'rob_2_vacuum'),
+
+        
+        ('rob_1_vacuum', 'rob_2_1'), ('rob_1_vacuum', 'rob_2_2'),
+        ('rob_1_vacuum', 'rob_2_3'), ('rob_1_vacuum', 'rob_2_4'),
+
+        ('rob_1_1', 'EoL_2_X'), ('rob_1_2', 'EoL_2_X'),
+        ('rob_1_3', 'EoL_2_X'), ('rob_1_4', 'EoL_2_X'),
+        ('rob_1_1', 'EoL_2_Y'), ('rob_1_2', 'EoL_2_Y'),
+        ('rob_1_3', 'EoL_2_Y'), ('rob_1_4', 'EoL_2_Y'),
+        
+        ('rob_2_1', 'EoL_3_X'), ('rob_2_2', 'EoL_3_X'),
+        ('rob_2_3', 'EoL_3_X'), ('rob_2_4', 'EoL_3_X'),
+        ('rob_2_1', 'EoL_3_Y'), ('rob_2_2', 'EoL_3_Y'),
+        ('rob_2_3', 'EoL_3_Y'), ('rob_2_4', 'EoL_3_Y'),
+        
+        ('rob_2_1', 'EoL_4_X'), ('rob_2_2', 'EoL_4_X'),
+        ('rob_2_3', 'EoL_4_X'), ('rob_2_4', 'EoL_4_X'),
+        ('rob_2_1', 'EoL_4_Y'), ('rob_2_2', 'EoL_4_Y'),
+        ('rob_2_3', 'EoL_4_Y'), ('rob_2_4', 'EoL_4_Y'),
+        
+        ('rob_2_1', 'EoL_5_X'), ('rob_2_2', 'EoL_5_X'),
+        ('rob_2_3', 'EoL_5_X'), ('rob_2_4', 'EoL_5_X'),
+        ('rob_2_1', 'EoL_5_Y'), ('rob_2_2', 'EoL_5_Y'),
+        ('rob_2_3', 'EoL_5_Y'), ('rob_2_4', 'EoL_5_Y'),
+
+        ('rob_2_1', 'EoL_6_X'), ('rob_2_2', 'EoL_6_X'),
+        ('rob_2_3', 'EoL_6_X'), ('rob_2_4', 'EoL_6_X'),
+        ('rob_2_1', 'EoL_6_Y'), ('rob_2_2', 'EoL_6_Y'),
+        ('rob_2_3', 'EoL_6_Y'), ('rob_2_4', 'EoL_6_Y'),
+
+        ('rob_1_vacuum', 'EoL_2_X'), ('rob_1_vacuum', 'EoL_2_Y'),
+        
+        ('rob_2_vacuum', 'EoL_3_X'), ('rob_2_vacuum', 'EoL_3_Y'),
+        ('rob_2_vacuum', 'EoL_4_X'), ('rob_2_vacuum', 'EoL_4_Y'),
+        ('rob_2_vacuum', 'EoL_5_X'), ('rob_2_vacuum', 'EoL_5_Y'),
+        ('rob_2_vacuum', 'EoL_6_X'), ('rob_2_vacuum', 'EoL_6_Y'),
+
+        ('EoL_1_X','score'), ('EoL_2_X','score'), ('EoL_3_X','score'), ('EoL_4_X','score'), ('EoL_5_X','score'), ('EoL_6_X','score'),
+        ('EoL_1_Y','score'), ('EoL_2_Y','score'), ('EoL_3_Y','score'), ('EoL_4_Y','score'), ('EoL_5_Y','score'), ('EoL_6_Y','score')]
      
         G.add_nodes_from(nodes)
         G.add_edges_from(edges)  # Make sure `edges` is defined somewhere
@@ -602,16 +735,12 @@ class MainLayout(WhiteBoxLayout):
                         'size_1':'interSize1',
                         'size_2':'interSize2',
                         'size_3':'interSize3'}
-        
-        
-        abnormal_df = pd.DataFrame()
 
         model = HT(config=HTConfig(adj_matrix_extended_pd))
         model.train(normal_df)
         
         abnormal_nodes = []
         new_colors = colors.copy()
-
         results = pd.DataFrame()
 
         for node in key_nodes:
@@ -637,7 +766,7 @@ class MainLayout(WhiteBoxLayout):
 
         for node in rank3_root_cause:
             new_colors[node] = 'lightcoral'
-
+        print(abnormal_nodes)
         return [abnormal_nodes,new_colors]  
 
 class MyApp(App):
