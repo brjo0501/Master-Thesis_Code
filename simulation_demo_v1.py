@@ -103,14 +103,14 @@ class MainLayout(WhiteBoxLayout):
         self.camera_3 = self.sim.getObject('/camera_3/camera')
         self.camera_EoL = self.sim.getObject('/camera_EoL/camera')
 
-        self.conveyor1 = self.sim.getObject('/genericConveyorTypeA[0]')
-        self.conveyor2 = self.sim.getObject('/genericConveyorTypeA[2]')
-        self.conveyor3 = self.sim.getObject('/genericConveyorTypeA[1]')
+        self.conveyor_1 = self.sim.getObject('/genericConveyorTypeA[0]')
+        self.conveyor_2 = self.sim.getObject('/genericConveyorTypeA[2]')
+        self.conveyor_3 = self.sim.getObject('/genericConveyorTypeA[1]')
 
         self.rob_1 = self.sim.getObject('/Ragnar[0]')
         self.rob_2 = self.sim.getObject('/Ragnar[1]')
 
-        self.objects = [self.camera_1,self.camera_2,self.camera_3,self.conveyor1,self.conveyor2,self.conveyor3,self.rob_1,self.rob_2,self.camera_EoL]
+        self.objects = [self.camera_1,self.camera_2,self.camera_3,self.conveyor_1,self.conveyor_2,self.conveyor_3,self.rob_1,self.rob_2,self.camera_EoL]
 
         self.events = self.sim.getObject('/Events')
 
@@ -389,40 +389,43 @@ class MainLayout(WhiteBoxLayout):
                     'EoL_5_X','EoL_5_Y',
                     'EoL_6_X', 'EoL_6_Y']
         
-        for index, row in data_EoL.iterrows():
+        for _, row in data_EoL.iterrows():
             non_zero_count = (row != 0.0).sum()
             total_count = len(EoL_nodes)
             score = (non_zero_count / total_count) * 100
             self.scores.append(score)
-        
-        if self.rca_activated :
-            last_time = self.t_data['time'].iloc[-1]
-            time_threshold = last_time - 35
-
-            abnormal_index= self.t_data[self.t_data['time'] <= time_threshold].index[-1]
-
-            warm_up_index = self.t_data[self.t_data['time'] <= 35].index[-1]
-
-            if warm_up_index < abnormal_index:
-                self.data_out['score'] = pd.DataFrame(self.scores)
-                self.abnormal_data = self.data_out.loc[abnormal_index:]
-                self.normal_data = self.data_out.loc[warm_up_index:abnormal_index]
-
-                self.sim.pauseSimulation()
-                self.clock_data.cancel()
-                self.clock_plot.cancel()
-
-                self.run_HT(abnormal_df = self.abnormal_data,
-                          normal_df = self.normal_data,
-                           key_nodes = ['score'],
-                           colors = self.colors)
-
+            score_dict = pd.DataFrame({'score':[score]})
+            all_data_row = pd.concat([all_data_row,score_dict],axis=1)
 
         self.data_out = pd.concat([self.data_out, all_data_row],ignore_index=True)
         #print(self.data_out)
         self.t_data = pd.concat([self.t_data,pd.DataFrame({'time': [self.sim.getSimulationTime()]})], ignore_index=True)
         #print(self.sim.getSimulationTime())
         #self.sim.step()
+
+    def run_RCA(self):
+
+        last_time = self.t_data['time'].iloc[-1]
+        time_threshold = last_time - 35
+
+        abnormal_index= self.t_data[self.t_data['time'] <= time_threshold-1]
+
+        warm_up_index = self.t_data[self.t_data['time'] <= 3-1]
+
+        if warm_up_index < abnormal_index:
+            self.abnormal_data = self.data_out.loc[abnormal_index:]
+            self.normal_data = self.data_out.loc[warm_up_index:abnormal_index]
+
+            self.sim.pauseSimulation()
+            self.clock_data.cancel()
+            self.clock_plot.cancel()
+
+            self.run_HT(abnormal_df = self.abnormal_data,
+                        normal_df = self.normal_data,
+                        key_nodes = ['score'],
+                        colors = self.colors)
+            
+        self.rca_activated = False
 
     def on_spinner_select_1(self, spinner, text):
         
@@ -452,13 +455,13 @@ class MainLayout(WhiteBoxLayout):
             self.object = self.camera_EoL
         elif text == 'Conveyor 1':
             self.graph_count = 1
-            self.object = self.conveyor1
+            self.object = self.conveyor_1
         elif text == 'Conveyor 2':
             self.graph_count = 1
-            self.object = self.conveyor2
+            self.object = self.conveyor_2
         elif text == 'Conveyor 3':
             self.graph_count = 1
-            self.object = self.conveyor3
+            self.object = self.conveyor_3
 
 
         if self.graph_count > num_graphs:
@@ -499,9 +502,18 @@ class MainLayout(WhiteBoxLayout):
         elif obj == self.camera_2:
             data = data[['sizeX','sizeY']]
             data = data.rename(columns={'sizeX': 'cam_2_X','sizeY': 'cam_2_Y'})
-        elif obj== self.camera_3:
+        elif obj == self.camera_3:
             data = data[['sizeX','sizeY']]
             data = data.rename(columns={'sizeX': 'cam_3_X','sizeY': 'cam_3_Y'})
+        elif obj == self.conveyor_1:
+            data = data[['speed']]
+            data = data.rename(columns={'speed':'con_1'})
+        elif obj == self.conveyor_2:
+            data = data[['speed']]
+            data = data.rename(columns={'speed':'con_2'})
+        elif obj == self.conveyor_3:
+            data = data[['speed']]
+            data = data.rename(columns={'speed':'con_3'})
         elif obj == self.camera_EoL:
             target_columns = ['part1SizeX','part2SizeX','part3SizeX','part4SizeX',
                               'part1SizeY','part2SizeY','part3SizeY','part4SizeY',
@@ -530,6 +542,12 @@ class MainLayout(WhiteBoxLayout):
             data = data[['cam_2_X','cam_2_Y']]
         elif self.object == self.camera_3:
             data = data[['cam_3_X','cam_3_Y']]
+        elif self.object == self.conveyor_1:
+            data = data[['con_1']]
+        elif self.object == self.conveyor_2:
+            data = data[['con_2']]
+        elif self.object == self.conveyor_3:
+            data = data[['con_3']]
         elif self.object == self.camera_EoL:
             data = data[['EoL_3_X','EoL_4_X','EoL_5_X','EoL_6_X',
                          'EoL_3_Y','EoL_4_Y','EoL_5_Y', 'EoL_6_Y',
