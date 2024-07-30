@@ -7,6 +7,7 @@ RingBuffer = require("modelscripts/ring_buffer")
 function sysCall_init()
     -- Prepare a floating view with the camera views:
     cam = sim.getObject('.')
+    con2 = sim.getObject("/genericConveyorTypeA[2]")
     --view = sim.floatingViewAdd(0.9, 0.5, 0.2, 0.2, 0)
     --sim.adjustView(view, cam, 90)
     
@@ -205,7 +206,9 @@ function sysCall_vision(inData)
                 -- end
     
                 index = index + 1
-                
+
+                sim.writeCustomDataBlock(con2,'partTrigger-CamEol',sim.packTable({trigger = true}))
+            
                 -- camData['wrongCount'] = wrongCount
                 -- camData['tray1'] = tray1
                 -- camData['tray2'] = tray2

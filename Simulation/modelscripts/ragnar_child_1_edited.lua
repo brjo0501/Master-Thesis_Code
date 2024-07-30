@@ -43,6 +43,7 @@ function sysCall_init()
     enableProduct = false
 
     sim.writeCustomDataBlock(model,'productTrigger',sim.packTable({trigger = false}))
+    sim.writeCustomDataBlock(model,'partTrigger',sim.packTable({trigger = false}))
 
     assemblyCounter = 1
 end
@@ -133,8 +134,6 @@ function sysCall_actuation()
         buffer5:push(supplyData)
         buffer6:push(vacuumData)
         buffer7:push(maxVelData)
-
-        print(buffer6)
     
         writeBuffer(buffer5,'buffer5')
         writeBuffer(buffer6,'buffer6')

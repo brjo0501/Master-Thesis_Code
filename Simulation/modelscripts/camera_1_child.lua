@@ -12,6 +12,8 @@ function sysCall_init()
 
     graph = sim.getObject('/Graph')
     events = sim.getObject('/Events')
+    con1 = sim.getObject("/genericConveyorTypeA[0]")
+    
     
     buffer = RingBuffer:new(25)
 
@@ -116,6 +118,7 @@ function sysCall_vision(inData)
         if (blobData[13] ~= nil or blobData[14] ~=nil) and camera_enabled and trigger then
             if blobData[11]> 0.47 and blobData[11] < 0.53 and blobData[12]> 0.47 and blobData[12] < 0.53 then -- inside camera area
 
+
                 camData['posX'] = blobData[11]
                 camData['posY'] = blobData[12]
                 camData['sizeX'] = blobData[13]
@@ -128,6 +131,7 @@ function sysCall_vision(inData)
                 buffer = readBuffer()
 
                 buffer:push({id,camData['sizeX'],camData['sizeY']})
+                sim.writeCustomDataBlock(con1,'partTrigger',sim.packTable({trigger = true}))
 
                 writeBuffer(buffer)
 
@@ -138,7 +142,7 @@ function sysCall_vision(inData)
                     detect = true
                 else
                     detect = false
-                    --print('not okay')
+                    print('not okay')
                 end
 
                 index = index + 1

@@ -28,6 +28,16 @@ function RingBuffer:push(value)
     self.full = self.tail == self.head
 end
 
+-- Push a value to all elements of the buffer without changing the tail
+function RingBuffer:pushToAll(value)
+    for i = 1, self.size do
+        local index = self:normalizeIndex(self.head + i - 1)
+        if self.buffer[index] then
+            table.insert(self.buffer[index], value)
+        end
+    end
+end
+
 -- Removes and returns the oldest element from the buffer
 function RingBuffer:pop()
     if self:isEmpty() then
@@ -43,9 +53,23 @@ end
 -- Returns the oldest element from the buffer without removing it
 function RingBuffer:peek()
     if self:isEmpty() then
-        error("Buffer is empty")
+        return  {0}
     end
     return self.buffer[self.head]
+end
+
+function RingBuffer:peekBuffer(num)
+    if self:isEmpty() then
+        return {0}
+    end
+    t = {}
+
+    for i = 0, num-1 do
+        local index = self:normalizeIndex(self.head+i)
+        table.insert(t, self.buffer[index][1])
+    end
+    self.full = false
+    return t
 end
 
 -- Replace the last entry in the buffer
@@ -71,8 +95,12 @@ function RingBuffer:isFull()
     return self.full
 end
 
+function RingBuffer:getHead()
+    return self.head
+end
+
 -- Returns the current number of elements in the buffer
-function RingBuffer:size()
+function RingBuffer:size_buffer()
     if self.full then
         return self.size
     elseif self.tail >= self.head then

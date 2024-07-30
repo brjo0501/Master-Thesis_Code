@@ -383,8 +383,8 @@ function sensing_withConveyor()
             trackedPartsInTrackingWindow[key]=value
             if not contains(handleTracking,key) then
                 sim.writeCustomDataBlock(rob2,'productTrigger',sim.packTable({trigger = true}))
+                sim.writeCustomDataBlock(rob2,'partTrigger',sim.packTable({trigger = true}))
                 table.insert(handleTracking,key)
-                --print(key)
             end
         end
 

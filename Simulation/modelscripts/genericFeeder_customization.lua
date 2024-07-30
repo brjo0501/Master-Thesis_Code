@@ -187,7 +187,7 @@ function frequencyChange_callback(ui,id,newVal)
             writeInfo(c)
         end
     end
-    simUI.setEditValue(ui,2,simBWF.format("%.2f",c['frequency']),true)
+    simUI.setEditValue(ui,2,simBWF.format("%.4f",c['frequency']),true)
 end
 
 function conveyorDistanceChange_callback(ui,id,newVal)
@@ -559,7 +559,7 @@ function setDlgItemContent()
         simUI.setEditValue(ui1,1,simBWF.format("%.0f",config['width']/0.001),true)
         simUI.setEditValue(ui1,61,simBWF.format("%.0f",config['height']/0.001),true)
         simUI.setEditValue(ui1,62,simBWF.format("%.0f",config['conveyorDist']/0.001),true)
-        simUI.setEditValue(ui1,2,simBWF.format("%.2f",config['frequency']),true)
+        simUI.setEditValue(ui1,2,simBWF.format("%.4f",config['frequency']),true)
         simUI.setEditValue(ui1,789,simBWF.format("%.1f",config['deactivationTime']),true)
         simUI.setCheckboxValue(ui1,30,simBWF.getCheckboxValFromBool((config['bitCoded']&1)~=0),true)
         simUI.setCheckboxValue(ui1,40,simBWF.getCheckboxValFromBool((config['bitCoded']&2)~=0),true)

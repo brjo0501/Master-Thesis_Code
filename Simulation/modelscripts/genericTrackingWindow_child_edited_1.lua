@@ -282,7 +282,7 @@ function sysCall_init()
     previousTime=0
     staticWindowFrozen=false
 
-    rob2 = sim.getObject("/Ragnar[0]")
+    rob1 = sim.getObject("/Ragnar[0]")
     handleTracking = {}
 end
 
@@ -382,7 +382,8 @@ function sensing_withConveyor()
         if (math.abs(p[1])<width*0.5) and (p[2]>-length*0.5-bias) and (p[2]<length*0.5-bias) and (p[3]>0) and (p[3]<height) then
             trackedPartsInTrackingWindow[key]=value
             if not contains(handleTracking,key) then
-                sim.writeCustomDataBlock(rob2,'productTrigger',sim.packTable({trigger = true}))
+                sim.writeCustomDataBlock(rob1,'productTrigger',sim.packTable({trigger = true}))
+                sim.writeCustomDataBlock(rob1,'partTrigger',sim.packTable({trigger = true}))
                 table.insert(handleTracking,key)
                 --print(key)
             end

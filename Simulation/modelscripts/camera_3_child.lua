@@ -7,6 +7,7 @@ RingBuffer = require("modelscripts/ring_buffer")
 function sysCall_init()
     -- Prepare a floating view with the camera views:
     cam = sim.getObject('.')
+    con3 = sim.getObject("/genericConveyorTypeA[1]")
     --view = sim.floatingViewAdd(0.1, 0.9, 0.2, 0.2, 0)
     --sim.adjustView(view, cam, 90)
 
@@ -135,6 +136,7 @@ function sysCall_vision(inData)
                 buffer = readBuffer()
 
                 buffer:push({id,camData['sizeX'],camData['sizeY']})
+                sim.writeCustomDataBlock(con3,'partTrigger',sim.packTable({trigger = true}))
 
                 writeBuffer(buffer)
 
@@ -143,13 +145,12 @@ function sysCall_vision(inData)
                 --imgName = sim.getStringParameter(sim.stringparam_scene_path)..'/Images/cam3/cam3_v2_'..index..'.png'
                 --sim.saveImage(img,res,0,imgName,-1)
 
-                --if (itemSizeX < 52 and itemSizeY < 52) and (itemSizeX > 48 and itemSizeY > 48) then
-                detect = true
-                --   id = index
-                --elseif (itemSizeX < 42 and itemSizeY < 42) and (itemSizeX > 38 and itemSizeY > 38) then
-                --    detect = false
-                --    id = index
-                --end
+                if (itemSizeX < 176 and itemSizeY < 176) and (itemSizeX > 144 and itemSizeY > 144) then
+                    detect = true
+                else
+                    detect = false
+                    print('not okay')
+                end
 
                 index = index + 1
                 camData['id'] = id
