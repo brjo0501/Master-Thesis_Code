@@ -45,6 +45,7 @@ function sysCall_init()
     enableProduct = false
 
     sim.writeCustomDataBlock(model,'productTrigger',sim.packTable({trigger = false}))
+    sim.writeCustomDataBlock(model,'partTrigger',sim.packTable({trigger = false}))
 end
 
 function readBuffer(buffer)

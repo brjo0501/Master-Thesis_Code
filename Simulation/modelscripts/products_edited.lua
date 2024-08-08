@@ -5,6 +5,7 @@ simUI=require'simUI'
 
 function sysCall_afterSimulation()
     local productsData = readCustomInfo()
+    --print(productsData)
     local datetime = os.date('%Y-%m-%d_%H-%M-%S')
     local filename = sim.getStringParameter(sim.stringparam_scene_path)..'/Dataset_Product/Data_Product_'..datetime..'.csv'
     dataToCSV(productsData,filename)
@@ -53,7 +54,9 @@ function dataToCSV(data, filename)
 
     for id,subData in pairs(data) do
         for header, _ in pairs(subData) do
-            table.insert(headers, header)
+            if not table_contains(headers, header) then
+                table.insert(headers, header)
+            end
         end
     end
 
@@ -61,6 +64,7 @@ function dataToCSV(data, filename)
 
     file = io.open(filename, 'w+')
     file:write(table.concat(headers, ',') .. '\n')
+
     for id,subData in pairs(data) do
         local maxLength = 0
         for _, list in pairs(subData) do
@@ -73,14 +77,23 @@ function dataToCSV(data, filename)
             local row = {extractID(id)}
             for col = 2, #headers do
                 local subKey = headers[col]
-                local value = subData[subKey] and subData[subKey][i] or 0
+                local value = subData[subKey] and subData[subKey][i] or ''
                 table.insert(row, processData(value))
             end
             file:write(table.concat(row, ',') .. '\n')
         end
     end
     file:close()
-    
+end
+
+function table_contains(tbl, x)
+    found = false
+    for _, v in pairs(tbl) do
+        if v == x then 
+            found = true 
+        end
+    end
+    return found
 end
 
 function processData(value)
