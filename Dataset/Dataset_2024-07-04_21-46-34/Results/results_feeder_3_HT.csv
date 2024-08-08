@@ -1,4 +1,0 @@
-score
-"{'root_cause': 'cam_3_X', 'score': 189.19468487958545, 'paths': ['cam_3_X', 'rob_1_1', 'EoL_2_X', 'score']}"
-"{'root_cause': 'rob_1_maxVel', 'score': 175.59980614302512, 'paths': ['rob_1_maxVel', 'rob_1_1', 'EoL_2_X', 'score']}"
-"{'root_cause': 'EoL_2_X', 'score': 171.75656731571365, 'paths': ['EoL_2_X', 'score']}"
