@@ -1,0 +1,2 @@
+size_1-1.1_1,feeder_3-1.2_2,gripper_1-1.3_3,max_Vel_2-1.4_4,size_1-1.5_5
+"['cam_1_Y', 'cam_1_X', 'rob_2_supply']","['cam_3_X', 'cam_3_Y', 'rob_2_supply']","['rob_1_supply', 'cam_3_X', 'rob_2_supply']","['rob_2_maxVel', 'cam_3_X', 'cam_1_Y']","['cam_1_X', 'cam_1_Y', 'rob_2_supply']"
