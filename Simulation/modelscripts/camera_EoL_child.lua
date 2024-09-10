@@ -28,8 +28,8 @@ function sysCall_init()
                                          part3PosX = 0,part3PosY = 0, part3SizeX = 0,part3SizeY = 0,
                                          part4PosX = 0,part4PosY = 0, part4SizeX = 0,part4SizeY = 0,
                                          tray1PosX = 0, tray1PosY =0, tray1SizeX = 0,tray1SizeY = 0,
-                                         tray2PosX = 0, tray2PosY =0, tray2SizeX = 0,tray2SizeY = 0}
-                                         --id = 0, detect = true, tray1 = 0, tray2 = 0} --correctCount = 0, wrongCount = 0,
+                                         tray2PosX = 0, tray2PosY =0, tray2SizeX = 0,tray2SizeY = 0,
+                                         id = 0}---, detect = true, tray1 = 0, tray2 = 0} --correctCount = 0, wrongCount = 0,
     writeCustomInfo(customTable)
     
     partSizeX = sim.addGraphStream(graph, 'Part size X-Dir', 'mm', 0, {1, 0, 0})
@@ -124,6 +124,9 @@ function sysCall_vision(inData)
         if blobCount > 1 and trigger then
             if blobData[12] > 0.49 and blobData[12] < 0.51 and blobData[11] > 0.49 and blobData[11] < 0.51 then  --tray inside scan area
                 id = index
+
+                camData['id'] = index
+
                 imgName = sim.getStringParameter(sim.stringparam_scene_path)..'/Images/cam4/cam4_v2_'..index..'.png'
                 --sim.saveImage(img,res,0,imgName,-1)
             

@@ -186,9 +186,11 @@ function action50(ui,id,newVal)
     local newTable = sim.unpackTable(feederData)
 
     if newVal ~= 2 then
+        newTable['frequency'] = 0
         newTable['nonIsoSizeScalingDistribution'] = [[{1,{(2*math.log(1/math.random())^.5*math.sin(2*math.pi*math.random())*2+200)/200,(2*math.log(1/math.random())^.5*math.cos(2*math.pi*math.random())*2+200)/200,1}}]]
         newTable['weightDistribution'] = [[{1,2*math.log(1/math.random())^.5*math.cos(2*math.pi*math.random())*0.004+0.40}]]
     else
+        newTable['frequency'] = 0.125
         newTable['nonIsoSizeScalingDistribution'] = [[{1,{(2*math.log(1/math.random())^.5*math.sin(2*math.pi*math.random())*20+200)/200,(2*math.log(1/math.random())^.5*math.cos(2*math.pi*math.random())*20+200)/200,1}}]]
         newTable['weightDistribution'] = [[{1,2*math.log(1/math.random())^.5*math.cos(2*math.pi*math.random())*0.004+0.40}]]
     end
@@ -207,14 +209,89 @@ function action60(ui,id,newVal)
     if newVal ~= 2 then
         newTable['nonIsoSizeScalingDistribution'] = [[{1,{(2*math.log(1/math.random())^.5*math.cos(2*math.pi*math.random())*1.6+160)/160,(2*math.log(1/math.random())^.5*math.sin(2*math.pi*math.random())*1.6+160)/160,1}}]]
         newTable['weightDistribution'] = [[{1,2*math.log(1/math.random())^.5*math.cos(2*math.pi*math.random())*0.0036+0.36}]]
+        --newTable['frequency'] = 0
     else
         newTable['nonIsoSizeScalingDistribution'] = [[{1,{(2*math.log(1/math.random())^.5*math.cos(2*math.pi*math.random())*16+160)/160,(2*math.log(1/math.random())^.5*math.sin(2*math.pi*math.random())*16+160)/160,1}}]]
         newTable['weightDistribution'] = [[{1,2*math.log(1/math.random())^.5*math.cos(2*math.pi*math.random())*0.036+0.36}]]
+        --newTable['frequency'] = 0.125
     end
     sim.writeCustomDataBlock(feeder3,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable))
     simUI.setCheckboxValue(ui,id,simBWF.getCheckboxValFromBool(newTable['nonIsoSizeScalingDistribution']==[[{1,{(2*math.log(1/math.random())^.5*math.cos(2*math.pi*math.random())*16+160)/160,(2*math.log(1/math.random())^.5*math.sin(2*math.pi*math.random())*16+160)/160,1}}]],true)) --{1,'CUBE_1'}
     print(sim.unpackTable(sim.readCustomDataBlock(feeder3,simBWF.modelTags.PARTFEEDER)))
     showDlg()
+end
+
+function interFeeder1()
+
+    local feederData1 = sim.readCustomDataBlock(feeder1, simBWF.modelTags.PARTFEEDER)
+    local feederData4=sim.readCustomDataBlock(feeder4,simBWF.modelTags.PARTFEEDER)
+    local feederData5=sim.readCustomDataBlock(feeder5,simBWF.modelTags.PARTFEEDER)
+    local feederData6=sim.readCustomDataBlock(feeder6,simBWF.modelTags.PARTFEEDER)
+
+    local newTable1 = sim.unpackTable(feederData1)
+    local newTable4 = sim.unpackTable(feederData4)
+    local newTable5 = sim.unpackTable(feederData5)
+    local newTable6 = sim.unpackTable(feederData6)
+
+    newTable1['frequency'] = 0
+    newTable4['frequency'] = 0
+    newTable5['frequency'] = 0
+    newTable6['frequency'] = 0
+
+
+    sim.writeCustomDataBlock(feeder1,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable1))
+    sim.writeCustomDataBlock(feeder4,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable4))
+    sim.writeCustomDataBlock(feeder5,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable5))
+    sim.writeCustomDataBlock(feeder6,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable6))
+    print('Intervention: feeder 1,4,5,6 has been disabled')
+end
+
+function resetFeeder1()
+
+    local feederData1 = sim.readCustomDataBlock(feeder1, simBWF.modelTags.PARTFEEDER)
+    local feederData4=sim.readCustomDataBlock(feeder4,simBWF.modelTags.PARTFEEDER)
+    local feederData5=sim.readCustomDataBlock(feeder5,simBWF.modelTags.PARTFEEDER)
+    local feederData6=sim.readCustomDataBlock(feeder6,simBWF.modelTags.PARTFEEDER)
+
+    local newTable1 = sim.unpackTable(feederData1)
+    local newTable4 = sim.unpackTable(feederData4)
+    local newTable5 = sim.unpackTable(feederData5)
+    local newTable6 = sim.unpackTable(feederData6)
+
+    newTable1['frequency'] = 0.125
+    newTable4['frequency'] = 0.125
+    newTable5['frequency'] = 0.125
+    newTable6['frequency'] = 0.125
+
+    sim.writeCustomDataBlock(feeder1,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable1))
+    sim.writeCustomDataBlock(feeder4,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable4))
+    sim.writeCustomDataBlock(feeder5,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable5))
+    sim.writeCustomDataBlock(feeder6,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable6))
+    print('Intervention: feeder 1,4,5,6 has been reset')
+
+end
+
+function interFeeder2()
+
+
+    local feederData = sim.readCustomDataBlock(feeder2, simBWF.modelTags.PARTFEEDER)
+
+    local newTable = sim.unpackTable(feederData)
+    newTable['frequency'] = 0
+
+    sim.writeCustomDataBlock(feeder2,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable))
+    print('Intervention: feeder 2 has been disabled')
+end
+
+function resetFeeder2()
+
+    local feederData = sim.readCustomDataBlock(feeder2, simBWF.modelTags.PARTFEEDER)
+
+    local newTable = sim.unpackTable(feederData)
+
+    newTable['frequency'] = 0.125
+    sim.writeCustomDataBlock(feeder2,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable))
+    print('Intervention: feeder 2 has been reset')
 
 end
 
@@ -237,7 +314,6 @@ function resetFeeder3()
     local feederData = sim.readCustomDataBlock(feeder3, simBWF.modelTags.PARTFEEDER)
 
     local newTable = sim.unpackTable(feederData)
-    local speed = 75
     newTable['frequency'] = 0.125
     sim.writeCustomDataBlock(feeder3,simBWF.modelTags.PARTFEEDER,sim.packTable(newTable))
     print('Intervention: feeder 3 has been reset')
@@ -763,7 +839,6 @@ function sysCall_init()
     camera1 = sim.getObject("/camera_1/camera")
     camera2 = sim.getObject("/camera_2/camera")
     camera3= sim.getObject("/camera_3/camera")
-    camera4 = sim.getObject("/camera_4/camera")
 
     conveyor1 = sim.getObject("/genericConveyorTypeA[0]")
     conveyor2 = sim.getObject("/genericConveyorTypeA[2]")
@@ -814,17 +889,17 @@ function showDlg()
 
         local xml = '<ui title="Interventions" activate="false" closeable="true" on-close="close_callback" layout="vbox" '..pos..' >'
 
-        xml = xml..'<checkbox text="Detection/Camera 1" on-change="action1" id="1" />'
+        xml = xml..'<checkbox text="Camera 1" on-change="action1" id="1" />'
 
-        xml = xml..'<checkbox text="Detection/Camera 2" on-change="action2" id="2" />'
+        xml = xml..'<checkbox text="Camera 2" on-change="action2" id="2" />'
 
-        xml = xml..'<checkbox text="Detection/Camera 3" on-change="action3" id="3" />'
+        xml = xml..'<checkbox text="Camera 3" on-change="action3" id="3" />'
 
-        xml = xml..'<checkbox text="Feeder - Green Parts" on-change="action40" id="41" />'
+        xml = xml..'<checkbox text="Size - Part" on-change="action40" id="41" />'
 
-        xml = xml..'<checkbox text="Feeder - White Trays" on-change="action50" id="51" />'
+        xml = xml..'<checkbox text="Size - Tray" on-change="action50" id="51" />'
 
-        xml = xml..'<checkbox text="Feeder - Blue Trays" on-change="action60" id="61" />'
+        xml = xml..'<checkbox text="Size - Ins" on-change="action60" id="61" />'
 
         xml = xml..'<label text="Conveyor Speed 1 (mm/s):" style="* {min-width: 300px; min-height: 30px;}" id ="11"/>'
         xml = xml..'<label text="'..speed1..'"style="* {min-width: 300px; min-height: 30px;}" id ="12"/>'

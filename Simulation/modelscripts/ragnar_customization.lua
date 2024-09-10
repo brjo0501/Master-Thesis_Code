@@ -268,25 +268,6 @@ function writeInfo(data)
     end
 end
 
-function readCustomInfo()
-    local data=sim.readCustomDataBlock(model,'customData')
-    if data then
-        data=sim.unpackTable(data)
-    else
-        data={}
-    end
-    --print(data)
-    return data
-end
-
-function writeCustomInfo(data)
-    if data then
-        sim.writeCustomDataBlock(model,'customData',sim.packTable(data))
-    else
-        sim.writeCustomDataBlock(model,'customData','')
-    end
-end
-
 function getLinkBLength(a,f)
     local tol=0.001 -- very small tolerance value to make sure the nominal robot has sizes a=300, b=550
     return 0.05*math.ceil((a*f-tol)/0.05)
@@ -481,9 +462,8 @@ end
 function updateMovementParamDisplay()
     if ui then
         local c=readInfo()
-        local customData = readCustomInfo()
         local sel=simBWF.getSelectedEditWidget(ui)
-        simUI.setEditValue(ui,10,simBWF.format("%.0f",customData['maxVel']*1000),true)
+        simUI.setEditValue(ui,10,simBWF.format("%.0f",c['maxVel']*1000),true)
         simUI.setEditValue(ui,11,simBWF.format("%.0f",c['maxAccel']*1000),true)
         simUI.setEditValue(ui,12,simBWF.format("%.3f",c['dwellTime']),true)
         simUI.setEditValue(ui,13,simBWF.format("%.3f",c['trackingTimeShift']),true)
@@ -493,7 +473,6 @@ function updateMovementParamDisplay()
         simUI.setEditValue(ui,1002,simBWF.format("%.0f , %.0f , %.0f",off[1]*1000,off[2]*1000,off[3]*1000),true)
         simUI.setEditValue(ui,1003,simBWF.format("%.0f",c['pickRounding']*1000),true)
         simUI.setEditValue(ui,1004,simBWF.format("%.0f",c['placeRounding']*1000),true)
-        simUI.setEditValue(ui,2010,simBWF.format("%.0f",customData['gripperSupply']),true)
         simUI.setEditValue(ui,1005,simBWF.format("%.0f",c['pickNulling']*1000),true)
         simUI.setEditValue(ui,1006,simBWF.format("%.0f",c['placeNulling']*1000),true)
         simUI.setEditValue(ui,1007,simBWF.format("%.0f",c['pickApproachHeight']*1000),true)
@@ -597,7 +576,6 @@ end
 
 function velocityChange_callback(uiHandle,id,newValue)
     local c=readInfo()
-    local customC = readCustomInfo()
     newValue=tonumber(newValue)
     if newValue then
         if newValue<1 then newValue=1 end
@@ -605,9 +583,7 @@ function velocityChange_callback(uiHandle,id,newValue)
         newValue=newValue/1000
         if newValue~=c['maxVel'] then
             c['maxVel']=newValue
-            customC['maxVel'] = newValue
             writeInfo(c)
-            writeCustomInfo(customC)
             simBWF.markUndoPoint()
         end
         adjustMaxVelocityMaxAcceleration()
@@ -795,19 +771,6 @@ function placeApproachHeightChange_callback(uiHandle,id,newValue)
     updateMovementParamDisplay()
 end
 
-function gripperSupply_callback(uiHandle,id,newValue)
-    local c=readCustomInfo()
-    newValue=tonumber(newValue)
-    if newValue <= 100 then
-        if newValue~=c['gripperSupply'] then
-            c['gripperSupply']=newValue
-            writeCustomInfo(c)
-            simBWF.markUndoPoint()
-        end
-    end
-    updateMovementParamDisplay()
-end
-
 function visualizeWorkspaceClick_callback(uiHandle,id,newVal)
     local c=readInfo()
     c['bitCoded']=(c['bitCoded']|256)
@@ -852,7 +815,6 @@ end
 
 function adjustMaxVelocityMaxAcceleration()
     local c=readInfo()
-    local customC = readCustomInfo()
     local mv,ma
     if c['motorType']==0 then
         -- Default motor
@@ -866,14 +828,12 @@ function adjustMaxVelocityMaxAcceleration()
     end
     if c['maxVel']>mv then
         c['maxVel']=mv
-        customC['maxVel']=mv
         simBWF.markUndoPoint()
     end
     if c['maxAccel']>ma then
         c['maxAccel']=ma
         simBWF.markUndoPoint()
     end
-    writeCustomInfo(customC)
     writeInfo(c)
 end
 
@@ -1602,15 +1562,14 @@ function createDlg()
                 <label text="Place nulling accuracy (mm)"/>
                 <edit on-editing-finished="placeNullingChange_callback" id="1006"/>
             </group>
+
+
             <group layout="form" flat="true">
                 <label text="Pick and place algorithm"/>
                 <button text="Edit"  on-click="algorithmClick_callback" id="403" />
 
                 <label text="Pick also without target in sight"/>
                 <checkbox text="" on-change="pickWithoutTargetClicked_callback" id="2001"/>
-
-                <label text="Gripper power (%)"/>
-                <edit on-editing-finished="gripperSupply_callback" id="2010"/>
 
                 <label text="Attach part to target"/>
                 <checkbox text="" on-change="attachPartClicked_callback" id="2000"/>
@@ -1804,9 +1763,7 @@ function sysCall_init()
     model=sim.getObject('.')
     _MODELVERSION_=0
     _CODEVERSION_=0
-
     local _info=readInfo()
-
     simBWF.checkIfCodeAndModelMatch(model,_CODEVERSION_,_info['version'])
     -- Following for backward compatibility:
     if _info['partTrackingWindow'] then
@@ -1853,7 +1810,6 @@ function sysCall_init()
     ----------------------------------------
     writeInfo(_info)
     adjustMaxVelocityMaxAcceleration()
-    local customData = writeCustomInfo({gripperSupply = 100, gripperVacuum = 0, jointVelo1 = 0, jointVelo2 = 0, jointVelo3 = 0, jointVelo4 = 0, maxVel = _info['maxVel']})
     connected=false
     paused=false
 
@@ -1898,7 +1854,7 @@ function sysCall_init()
         lowerArmLAdjust[#lowerArmLAdjust+1]=sim.getObject('./Ragnar_lowerArmLAdjustB'..i-1)
     end
 
-    for i=1,3,1 do
+    for i=1,5,1 do
         middleCoverParts[i]=sim.getObject('./Ragnar_middleCover'..i)
     end
 
@@ -1998,18 +1954,11 @@ end
 function sysCall_afterSimulation()
     updateEnabledDisabledItems()
     local c=readInfo()
-    local customC = readCustomInfo()
-    customC['maxVel'] = 2
-    customC['gripperSupply'] = 100
-    customC['gripperVacuum'] = 0
-    c['maxVel'] = 2
     if (c['bitCoded']&256)==256 then
         sim.setObjectInt32Param(workspace,sim.objintparam_visibility_layer,1)
     else
         sim.setObjectInt32Param(workspace,sim.objintparam_visibility_layer,0)
     end
-    writeInfo(c)
-    writeCustomInfo(customC)
 end
 
 function sysCall_beforeSimulation()

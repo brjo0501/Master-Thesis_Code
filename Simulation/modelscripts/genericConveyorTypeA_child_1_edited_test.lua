@@ -271,6 +271,7 @@ function sysCall_actuation()
         local dv=maxVel-beltVelocity
         if math.abs(dv)>accel*dt then
             beltVelocity=beltVelocity+accel*dt*math.abs(dv)/dv
+            print(beltVelocity)
         else
             beltVelocity=maxVel
         end

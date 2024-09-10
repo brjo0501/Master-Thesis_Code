@@ -366,9 +366,9 @@ class MainLayout(WhiteBoxLayout):
         self.networkx_graph_display.figure = self.create_networkx_graph(self.colors)
         self.networkx_graph_display.draw()
 
-        self.sim.setStepping(True)
+        #self.sim.setStepping(True)
         self.sim.startSimulation()
-        self.sim.setBoolParam(self.sim.boolparam_display_enabled, False)
+        #self.sim.setBoolParam(self.sim.boolparam_display_enabled, False)
         print('Connection and Start Simulation')
 
         self.update_interval_data = 0.050  # Update interval in seconds
@@ -376,7 +376,7 @@ class MainLayout(WhiteBoxLayout):
 
         self.update_interval = 3  # Update interval in seconds
         self.clock_plot = Clock.schedule_interval(self.update_plots, self.update_interval)
-        self.sim.step()
+        #self.sim.step()
 
     def detect_anomalies(self,data):
         window_size = 10
@@ -430,7 +430,7 @@ class MainLayout(WhiteBoxLayout):
         #print(self.data_out)
         self.t_data = pd.concat([self.t_data,pd.DataFrame({'time': [self.sim.getSimulationTime()]})], ignore_index=True)
         #print(self.sim.getSimulationTime())
-        self.sim.step()
+        #self.sim.step()
 
     def run_RCA(self):
 

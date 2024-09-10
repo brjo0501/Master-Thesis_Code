@@ -151,7 +151,7 @@ function sysCall_vision(inData)
                 writeCustomInfo(camData)
                 trigger = false
                 --print(itemSizeX,itemSizeY,detect)
-                --print('cam 1 - '..sim.getSimulationTime())
+                --print(camData)
 
                 local event = sim.readCustomDataBlock(events,'customData')
                 local eventList = sim.unpackTable(event)

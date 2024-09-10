@@ -84,18 +84,17 @@ function checkIfLabelIsVisible(labelShape,hs)
     local pos={height,width/2,-width/2}
     local orient={{-math.pi,0,0},{0,-math.pi/2,-math.pi/2},{0,math.pi/2,math.pi/2}}
     local modelM=sim.getObjectMatrix(model,-1)
-    
-    for sensL=1,3,1 do 
-            if (detectorLocations&bits[sensL])>0  then
-               -- that detector is enabled
-               local labelM=sim.getObjectMatrix(labelShape,model)
-               sim.setObjectOrientation(sensor2,model,orient[sensL])
-               local sensorM=sim.getObjectMatrix(sensor2,model)
-               local dotP=-labelM[3]*sensorM[3]-labelM[7]*sensorM[7]-labelM[11]*sensorM[11]
-               if dotP>1 then dotP=1 end
-               if dotP<-1 then dotP=-1 end
-               local angle=math.acos(dotP)
-               if math.abs(angle)<maxLabelAngle then
+    for sensL=1,3,1 do
+        if (detectorLocations&bits[sensL])>0 then
+            -- that detector is enabled
+            local labelM=sim.getObjectMatrix(labelShape,model)
+            sim.setObjectOrientation(sensor2,model,orient[sensL])
+            local sensorM=sim.getObjectMatrix(sensor2,model)
+            local dotP=-labelM[3]*sensorM[3]-labelM[7]*sensorM[7]-labelM[11]*sensorM[11]
+            if dotP>1 then dotP=1 end
+            if dotP<-1 then dotP=-1 end
+            local angle=math.acos(dotP)
+            if math.abs(angle)<maxLabelAngle then
                 -- ok, the angle looks fine
                 -- Now we check 9 points on the label:
                 local checkFailed=false
@@ -135,17 +134,17 @@ function checkIfLabelIsVisible(labelShape,hs)
                     successIndex=sensL -- success
                     break
                 end
-               end
             end
+        end
     end
     if successIndex>0 and showLabels then
-            if successIndex==1 then
-                sim.setObjectFloatParam(sensor3,sim.visionfloatparam_far_clipping,height)
-            else
-                sim.setObjectFloatParam(sensor3,sim.visionfloatparam_far_clipping,width)
-            end
-            sim.setObjectFloatParam(sensor3,sim.visionfloatparam_ortho_size,math.max(hs[1],hs[2])*2.5)
-            sim.handleVisionSensor(sensor3)
+        if successIndex==1 then
+            sim.setObjectFloatParam(sensor3,sim.visionfloatparam_far_clipping,height)
+        else
+            sim.setObjectFloatParam(sensor3,sim.visionfloatparam_far_clipping,width)
+        end
+        sim.setObjectFloatParam(sensor3,sim.visionfloatparam_ortho_size,math.max(hs[1],hs[2])*2.5)
+        sim.handleVisionSensor(sensor3)
     end
     sim.setObjectOrientation(sensor2,model,orient[1])
     return successIndex>0
@@ -184,11 +183,10 @@ function getAllVisiblePartsInWindow()
     for i=1,#l,1 do
         local isPart,isInstanciated,data=simBWF.isObjectPartAndInstanciated(l[i])
         if isInstanciated then
-            
-            local p=sim.getObjectPosition(l[i],model) -- relative position of all parts to the detection window
-            if (math.abs(p[1])<width*0.5) and (math.abs(p[2])<length*0.5) and (p[3]>0) and (p[3]<height) then --if part within the detection window
+            local p=sim.getObjectPosition(l[i],model)
+            if (math.abs(p[1])<width*0.5) and (math.abs(p[2])<length*0.5) and (p[3]>0) and (p[3]<height) then
                 retL2[#retL2+1]=l[i]
-                sim.setObjectPosition(sensor1,model,{p[1],p[2],op[3]}) -- 
+                sim.setObjectPosition(sensor1,model,{p[1],p[2],op[3]})
                 local r,dist,pt,obj,n=sim.handleProximitySensor(sensor1)
                 if r>0 then
                     -- Only if we detected the same object (there might be overlapping objects)
@@ -199,7 +197,7 @@ function getAllVisiblePartsInWindow()
                         end
                         obj=sim.getObjectParent(obj)
                     end
-                    if obj==l[i] then -- object from the tree
+                    if obj==l[i] then
                         local hasLabel=false
                         if detectorLocations>0 then
                             hasLabel=checkIfPartHasVisibleLabels(obj)
@@ -215,8 +213,7 @@ function getAllVisiblePartsInWindow()
                         n[3]=1
 
                         p=sim.multiplyVector(m,{p[1],p[2],op[3]-dist})
-                        retL[l[i]]={data['name'],p,{0,0,0},0,getPartMass(l[i]),data['destination'],n,hasLabel} 
-                        -- name, pickPos, dxVector,vel,mass,destination,detectedSurfaceNormalVector,labelPresent
+                        retL[l[i]]={data['name'],p,{0,0,0},0,getPartMass(l[i]),data['destination'],n,hasLabel} -- name, pickPos, dxVector,vel,mass,destination,detectedSurfaceNormalVector,labelPresent
                     end
                 end
             end
@@ -295,9 +292,7 @@ function sysCall_init()
     sensor1=sim.getObject('./genericDetectionWindow_sensor1')
     sensor2=sim.getObject('./genericDetectionWindow_sensor2')
     sensor3=sim.getObject('./genericDetectionWindow_sensor3')
-
-
-    local data = sim.readCustomDataBlock(model,'XYZ_DETECTIONWINDOW_INFO')
+    local data=sim.readCustomDataBlock(model,'XYZ_DETECTIONWINDOW_INFO')
     data=sim.unpackTable(data)
     width=data['width']
     length=data['length']
@@ -333,36 +328,6 @@ function sysCall_init()
 end
 
 function sysCall_sensing()
-
-
-  local customData = sim.readCustomDataBlock(model,'customData')
-
-  cam = sim.getObject('/camera_1/camera')
-  index = 1
-
-  camData = sim.unpackTable(sim.readCustomDataBlock(cam,'customData'))
-
-  idPart = camData['id']
-  camDetect = camData['detect']
-  camEnabled = camData['enabledCamera']
-
-  --print(camDetect)
-  
-  enabledDetection = sim.unpackTable(customData)
-
-  --print(enabledDetection['enabledDetection'] and camDetect)
-
-  local detect = false
-
-  if (enabledDetection['enabledDetection'] == true) then
-    if  camDetect or not camEnabled then 
-        detect = true
-    end
-  end
-
-  if detect then --and not enabledInter['interDetection'] then 
-    --print(detect)
-    --print(enabledDetection)
     local t=sim.getSimulationTime()
     local dt=t-previousTime
     local detectedParts,allParts=getAllVisiblePartsInWindow()
@@ -375,7 +340,6 @@ function sysCall_sensing()
 
     local inf={}
     for key,value in pairs(detectedParts) do
-        --print(detectedParts)
         local dat=previousParts[key]
         if dat then
             local dv={value[2][1]-dat[2][1],value[2][2]-dat[2][2],value[2][3]-dat[2][3]}
@@ -426,7 +390,4 @@ function sysCall_sensing()
     for i=1,#toRemove,1 do
         allPartsInWindowForAWhile[toRemove[i]]=nil
     end
-
-    index = index +1
- end
 end

@@ -976,6 +976,7 @@ RobPick = function(partData,attachPart,theStackingShift,approachHeight,blend,nul
     local event = sim.readCustomDataBlock(events,'customData')
     local eventList = sim.unpackTable(event)
     local eventInput = {['pick 1']=sim.getSimulationTime(),['assembly'] = assemblyCounter}
+    --print('rob 1 - '..sim.getSimulationTime())
     local newEntry = #(eventList) + 1
     eventList[newEntry] = eventInput
     sim.writeCustomDataBlock(events,'customData',sim.packTable(eventList))
